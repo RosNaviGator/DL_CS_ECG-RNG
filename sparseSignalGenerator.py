@@ -14,7 +14,7 @@ def sparseSignal(N, K=None, sigma_inactive=0.01, sigma_active=0.5, fixedActiveVa
     K : int, optional
         The number of active (non-zero) components in the signal. If not provided, defaults to 10% of `N`.
     
-    sigma_inactive : float, optional (default=0.01)
+    sigma_:inactive : float, optional (default=0.01)
         The standard deviation of the Gaussian noise added to the inactive components.
     
     sigma_active : float, optional (default=0.5)
