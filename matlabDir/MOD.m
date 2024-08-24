@@ -3,12 +3,12 @@ function [Dictionary,output] = MOD(Data,param)
 %                          MOD algorithm
 % =========================================================================
 % Given for comparison reasons only. For detils please see the paper
-% "Method of optimal directions for frame design", written by K. Engan, 
-% S.O. Aase, and J.H. Husfy, appeared in the IEEE International Conference 
+% "Method of optimal directions for frame design", written by K. Engan,
+% S.O. Aase, and J.H. Husfy, appeared in the IEEE International Conference
 % on Acoustics, Speech, and Signal Processing, 1999.
 % =========================================================================
 % INPUT ARGUMENTS:
-% Data                         an nXN matrix that contins N signals (Y), each of dimension n. 
+% Data                         an nXN matrix that contins N signals (Y), each of dimension n.
 % param                        structure that includes all required
 %                                 parameters for the K-SVD execution.
 %                                 Required fields are:
@@ -23,19 +23,19 @@ function [Dictionary,output] = MOD(Data,param)
 %    (optional, see errorFlag) L,...                 % maximum coefficients to use in OMP coefficient calculations.
 %    (optional, see errorFlag) errorGoal, ...        % allowed representation error in representing each signal.
 %    InitializationMethod,...  mehtod to initialize the dictionary, can
-%                                 be one of the following arguments: 
-%                                 * 'DataElements' (initialization by the signals themselves), or: 
+%                                 be one of the following arguments:
+%                                 * 'DataElements' (initialization by the signals themselves), or:
 %                                 * 'GivenMatrix' (initialization by a given matrix param.initialDictionary).
-%    (optional, see InitializationMethod) initialDictionary,...      % if the initialization method 
+%    (optional, see InitializationMethod) initialDictionary,...      % if the initialization method
 %                                 is 'GivenMatrix', this is the matrix that will be used.
 %    preserveDCAtom, ...       =1 for a DC atom (in which all entries are equal) to be generated, and
 %                                 not changed throughout the training.
 %    (optional) TrueDictionary, ...        % if specified, in each
 %                                 iteration the difference between this dictionary and the trained one
 %                                 is measured and displayed.
-%    displayProgress, ...      if =1 progress information is displyed. If param.errorFlag==0, 
-%                                 the average repersentation error (RMSE) is displayed, while if 
-%                                 param.errorFlag==1, the average number of required coefficients for 
+%    displayProgress, ...      if =1 progress information is displyed. If param.errorFlag==0,
+%                                 the average repersentation error (RMSE) is displayed, while if
+%                                 param.errorFlag==1, the average number of required coefficients for
 %                                 representation of each signal is displayed.
 % =========================================================================
 % OUTPUT ARGUMENTS:
@@ -107,7 +107,7 @@ for iterNum = 1:param.numIteration
             disp(['Iteration   ',num2str(iterNum),'   Average number of coefficients: ',num2str(output.numCoef(iterNum-1))]);
         end
     end
-    if (displayErrorWithTrueDictionary ) 
+    if (displayErrorWithTrueDictionary )
         [ratio(iterNum+1),ErrorBetweenDictionaries(iterNum+1)] = I_findDistanseBetweenDictionaries(param.TrueDictionary,Dictionary);
         disp(strcat(['Iteration  ', num2str(iterNum),' ratio of restored elements: ',num2str(ratio(iterNum+1))]));
         output.ratio = ratio;
@@ -136,9 +136,9 @@ end
 ratio = 100*catchCounter/size(original,2);
 
 
-    
 
-    
+
+
 
 
 

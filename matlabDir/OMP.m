@@ -1,12 +1,13 @@
-function [A]=OMP(D,X,L); 
+function [A]=OMP(D,X,L);
 %=============================================
-% Sparse coding of a group of signals based on a given 
-% dictionary and specified number of atoms to use. 
-% input arguments: 
+% Orthogonal Matching Pursuit (OMP)
+% Sparse coding of a group of signals based on a given
+% dictionary and specified number of atoms to use.
+% input arguments:
 %       D - the dictionary (its columns MUST be normalized).
 %       X - the signals to represent
 %       L - the max. number of coefficients for each signal.
-% output arguments: 
+% output arguments:
 %       A - sparse coefficient matrix.
 %=============================================
 [n,P]=size(X);

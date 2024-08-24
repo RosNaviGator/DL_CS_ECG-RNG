@@ -7,13 +7,13 @@ function [Dictionary,output] = KSVD(...
 % The K-SVD algorithm finds a dictionary for linear representation of
 % signals. Given a set of signals, it searches for the best dictionary that
 % can sparsely represent each signal. Detailed discussion on the algorithm
-% and possible applications can be found in "The K-SVD: An Algorithm for 
+% and possible applications can be found in "The K-SVD: An Algorithm for
 % Designing of Overcomplete Dictionaries for Sparse Representation", written
-% by M. Aharon, M. Elad, and A.M. Bruckstein and appeared in the IEEE Trans. 
-% On Signal Processing, Vol. 54, no. 11, pp. 4311-4322, November 2006. 
+% by M. Aharon, M. Elad, and A.M. Bruckstein and appeared in the IEEE Trans.
+% On Signal Processing, Vol. 54, no. 11, pp. 4311-4322, November 2006.
 % =========================================================================
 % INPUT ARGUMENTS:
-% Data                         an nXN matrix that contins N signals (Y), each of dimension n. 
+% Data                         an nXN matrix that contins N signals (Y), each of dimension n.
 % param                        structure that includes all required
 %                                 parameters for the K-SVD execution.
 %                                 Required fields are:
@@ -33,17 +33,17 @@ function [Dictionary,output] = KSVD(...
 %    (optional, see errorFlag) L,...                 % maximum coefficients to use in OMP coefficient calculations.
 %    (optional, see errorFlag) errorGoal, ...        % allowed representation error in representing each signal.
 %    InitializationMethod,...  mehtod to initialize the dictionary, can
-%                                 be one of the following arguments: 
-%                                 * 'DataElements' (initialization by the signals themselves), or: 
+%                                 be one of the following arguments:
+%                                 * 'DataElements' (initialization by the signals themselves), or:
 %                                 * 'GivenMatrix' (initialization by a given matrix param.initialDictionary).
-%    (optional, see InitializationMethod) initialDictionary,...      % if the initialization method 
+%    (optional, see InitializationMethod) initialDictionary,...      % if the initialization method
 %                                 is 'GivenMatrix', this is the matrix that will be used.
 %    (optional) TrueDictionary, ...        % if specified, in each
 %                                 iteration the difference between this dictionary and the trained one
 %                                 is measured and displayed.
-%    displayProgress, ...      if =1 progress information is displyed. If param.errorFlag==0, 
-%                                 the average repersentation error (RMSE) is displayed, while if 
-%                                 param.errorFlag==1, the average number of required coefficients for 
+%    displayProgress, ...      if =1 progress information is displyed. If param.errorFlag==0,
+%                                 the average repersentation error (RMSE) is displayed, while if
+%                                 param.errorFlag==1, the average number of required coefficients for
 %                                 representation of each signal is displayed.
 % =========================================================================
 % OUTPUT ARGUMENTS:
@@ -79,7 +79,7 @@ if (isfield(param,'TrueDictionary'))
     ratio = zeros(param.numIteration+1,1);
 else
     displayErrorWithTrueDictionary = 0;
-	ratio = 0;
+    ratio = 0;
 end
 if (param.preserveDCAtom>0)
     FixedDictionaryElement(1:size(Data,1),1) = 1/sqrt(size(Data,1));
@@ -114,17 +114,17 @@ for iterNum = 1:param.numIteration
     % find the coefficients
     if (param.errorFlag==0)
         %CoefMatrix = mexOMPIterative2(Data, [FixedDictionaryElement,Dictionary],param.L);
-      
+        
         CoefMatrix = OMP([FixedDictionaryElement,Dictionary],Data, param.L);
-   
-    else 
+        
+    else
         %CoefMatrix = mexOMPerrIterative(Data, [FixedDictionaryElement,Dictionary],param.errorGoal);
         CoefMatrix = OMPerr([FixedDictionaryElement,Dictionary],Data, param.errorGoal);
         param.L = 1;
     end
     
     replacedVectorCounter = 0;
-	rPerm = randperm(size(Dictionary,2));
+    rPerm = randperm(size(Dictionary,2));
     for j = rPerm
         [betterDictionaryElement,CoefMatrix,addedNewVector] = I_findBetterDictionaryElement(Data,...
             [FixedDictionaryElement,Dictionary],j+size(FixedDictionaryElement,2),...
@@ -137,7 +137,7 @@ for iterNum = 1:param.numIteration
         end
         replacedVectorCounter = replacedVectorCounter+addedNewVector;
     end
-
+    
     if (iterNum>1 & param.displayProgress)
         if (param.errorFlag==0)
             output.totalerr(iterNum-1) = sqrt(sum(sum((Data-[FixedDictionaryElement,Dictionary]*CoefMatrix).^2))/prod(size(Data)));
@@ -149,7 +149,7 @@ for iterNum = 1:param.numIteration
             disp(['Iteration   ',num2str(iterNum),'   Average number of coefficients: ',num2str(output.numCoef(iterNum-1))]);
         end
     end
-    if (displayErrorWithTrueDictionary ) 
+    if (displayErrorWithTrueDictionary )
         [ratio(iterNum+1),ErrorBetweenDictionaries(iterNum+1)] = I_findDistanseBetweenDictionaries(param.TrueDictionary,Dictionary);
         disp(strcat(['Iteration  ', num2str(iterNum),' ratio of restored elements: ',num2str(ratio(iterNum+1))]));
         output.ratio = ratio;
@@ -185,11 +185,11 @@ if (length(relevantDataIndices)<1) %(length(relevantDataIndices)==0)
 end
 
 NewVectorAdded = 0;
-tmpCoefMatrix = CoefMatrix(:,relevantDataIndices); 
+tmpCoefMatrix = CoefMatrix(:,relevantDataIndices);
 tmpCoefMatrix(j,:) = 0;% the coeffitients of the element we now improve are not relevant.
 errors =(Data(:,relevantDataIndices) - Dictionary*tmpCoefMatrix); % vector of errors that we want to minimize with the new element
 % % the better dictionary element and the values of beta are found using svd.
-% % This is because we would like to minimize || errors - beta*element ||_F^2. 
+% % This is because we would like to minimize || errors - beta*element ||_F^2.
 % % that is, to approximate the matrix 'errors' with a one-rank matrix. This
 % % is done using the largest singular value.
 [betterDictionaryElement,singularValue,betaVector] = svds(errors,1);

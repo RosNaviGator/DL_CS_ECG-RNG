@@ -1,8 +1,8 @@
 function [s,idxNZ] = sparseSigGen4plusNoise(N,NZ,sigma_off,fixedActiveValue)
-% - Generates an Nx1 random sparse vector with "N-NZ" number of its components 
+% - Generates an Nx1 random sparse vector with "N-NZ" number of its components
 %   (randomly) chosen to be nearly zero (inactive components). That is NZ is
 %   the number of Non-Zero (active) components.
-% - The rest of the compoents will have the fixed value "fixedActiveValue" 
+% - The rest of the compoents will have the fixed value "fixedActiveValue"
 %   active components). If not supplied with the "fixedActiveValue", the
 %   function generates a gaussian noise with unit varinace over the active
 %   components.
