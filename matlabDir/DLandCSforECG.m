@@ -26,22 +26,26 @@ for iter = 1:repeat
     
     %% Extract training and testing Sets from ECG data
     
-    MULT = 128;  % We'll extract multiples of 128 samples
+    MULT = 128;  % We'll extract multiples of MULT samples                   DEFAULT: 128
     TRAIN_NUM = 400;  % Number of times we take MULT samples for training    DEFAULT: 400
     TEST_NUM = 25;  % Number of times we take MULT samples for testing       DEFAULT: 25
+    
     start_train = 1;  % we start extracting from this sample for training
     end_train = TRAIN_NUM*MULT;  % we end extracting at this sample for training
     
     % To avoid bias, we start extracting from the next sample after training
     start_test = end_train+1;
     end_test = start_test+(TEST_NUM*MULT)-1;
+
+
     trainSet = data0.val(1,start_train:end_train);
     testSet = data0.val(1,start_test:end_test);
-    %disp('Shape of trainingSet');
-    %disp(size(trainSet));
-    %disp('Shape of testSet');
-    %disp(size(testSet));
-    
+    disp('Shape of trainingSet');
+    disp(size(trainSet));
+    %disp(trainSet(1:3));
+    disp('Shape of testSet');
+    disp(size(testSet));
+    %disp(testSet(1:3));
     
     %% ------------------------------------------------
     %% TRAINING
@@ -50,13 +54,18 @@ for iter = 1:repeat
     % create Training Matrix from trainingSet
     l=TRAIN_NUM;  %Number of trained signal
     n=MULT;  %length of signal
-    Data = zeros(n,l);
+    %Data = zeros(n,l);
     TrainMat = zeros(n,l);
     for i=1:l
         TrainMat(:,i) = trainSet( (i-1)*n+1 : i*n );
         %plot(TrainMat(:,i)); pause(0.1);
     end
+
+    disp('Shape of TrainMat');
+    disp(size(TrainMat));
+    %disp(TrainMat(1:3,1:3));
     
+
     %% Dictionary learning
     %(dictionary = orthonormal sparsifying basis)
     
@@ -79,6 +88,20 @@ for iter = 1:repeat
     % Dictionary learning using MOD and KSVD
     [DicMod, outputMod] = MOD(TrainMat,param);
     [DicKSVD,X] = KSVD(TrainMat,param);
+
+    % Define the directory and output file name
+    output_dir = './debug';
+    output_filename = fullfile(output_dir, 'DicKSVD_output.mat');
+
+    % Check if the directory exists, if not, create it
+    if ~exist(output_dir, 'dir')
+        mkdir(output_dir);
+    end
+
+    % Save the dictionary to a .mat file in the specified directory
+    save(output_filename, 'DicKSVD');
+
+
     
     
     
@@ -88,9 +111,13 @@ for iter = 1:repeat
     
     % Test signal
     x=testSet';
+    % print shape of x, print x
+    disp('Shape of x');
+    disp(size(x));
+    %disp(x(1:16));
     
     % Parameters
-    N = 128;  % length of signal block
+    N = MULT;  % length of signal block
     CR = 1/4;  % compression ratio
     M = N*CR;  % length of compressed block
     
@@ -101,19 +128,41 @@ for iter = 1:repeat
     %A = randn(M,N);  % random matrix
     
     % binomial random matrix
-    A = ones(M,N);
-    A = binornd(A,.5);
-    A = A-.5;A=1/sqrt(M)*A;
-    %disp('Shape of A');
-    %disp(size(A));
+    %A = ones(M,N);
+    %A = binornd(A,.5);
+    %A = A-.5;A=1/sqrt(M)*A;
+    
+    % BDDB matrix
+    %------ Deterministic matrix: DBBD matrix 
+    A = zeros(M,N);
+    m=N/M;
+    for i=1:M 
+        A(i,1+(i-1)*m:(i)*m) = 1;
+    end
+    
+    
+    disp('Shape of A');
+    disp(size(A));
     %disp(A);
     
     
     %% Dictionaries
     
-    dict_DCT = wmpdictionary(N,'LstCpt',{'dct'});  % DCT dictionary (benchmark)
+    %dict_DCT = wmpdictionary(N,'LstCpt',{'dct'});  % DCT dictionary (benchmark)
+    dict_DCT = wmpdictionary(N, 'LstCpt', repmat({'dct'}, 1, 2)); % Creates a dictionary with twice the number of DCT atoms
     dict_MOD = DicMod;  % MOD dictionary (previously learned)
     dict_KSVD = DicKSVD;  % KSVD dictionary (previously learned)
+
+    disp('Shape of dict_DCT');
+    disp(size(dict_DCT));
+    %disp(dict_DCT(1:3,1:3));
+    disp('Shape of dict_MOD');
+    disp(size(dict_MOD));
+    %disp(dict_MOD(1:3,1:3));
+    disp('Shape of dict_KSVD');
+    disp(size(dict_KSVD));
+    %disp(dict_KSVD(1:3,1:3));
+
     
     
     %% Theta matrix, A*dict
@@ -144,12 +193,15 @@ for iter = 1:repeat
     
     
     
-    % Solved only with Kronecker Technique)
+    % Seems it doesn't use kroencker
     for i=1:length(testSet)/N
         
         j=i;
         
         y=A*x((i-1)*N+1:N*i,1);  % compressed signal block
+        % shape of y
+        disp('Shape of y');
+        disp(size(y));
         
         xp_DCT = SL0(A1_DCT, y, sigma_min, sigma_decrease_factor, mu_0, L, A_pinv_DCT);
         xp_MOD = SL0(A1_MOD, y, sigma_min, sigma_decrease_factor, mu_0, L, A_pinv_MOD);
@@ -220,5 +272,7 @@ end
 fprintf('mean SNR_DCTT mean SNR_MODD mean SNR_KSVDD, over %d times\n', repeat);
 disp([SNR_DCTT SNR_MODD SNR_KSVDD]/repeat);
 
+
+close all;
 
 

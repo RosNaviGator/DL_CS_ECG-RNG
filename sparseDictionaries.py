@@ -2,7 +2,7 @@ import numpy as np
 import scipy.fftpack as fftpack
 import pywt
 
-def generate_DCT_dictionary(N):
+def dct_dictionary(N):
     """
     Generates a Discrete Cosine Transform (DCT) orthonormal basis matrix.
 
@@ -248,3 +248,43 @@ def compute_coherence(matrix):
     coherence = np.max(np.abs(gram_matrix))
     
     return coherence
+
+
+def check_matrix_properties(A):
+    """
+    Checks various properties of a matrix.
+
+    The function checks if the matrix `A` is full rank, if its columns and rows are normalized,
+    and computes the coherence of the matrix. It also prints the results.
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        The matrix to check.
+
+    Returns
+    -------
+    None
+
+    Example
+    -------
+    >>> A = np.array([[1, 2], [3, 4]])
+    >>> check_matrix_properties(A)
+    """
+    # Check if the matrix is full rank
+    is_full_rank = np.linalg.matrix_rank(A) == min(A.shape)
+
+    # Check if the columns are normalized
+    is_columns_normalized = check_normalization(A)
+
+    # Check if the rows are normalized
+    is_rows_normalized = check_normalization(A.T)
+
+    # Compute the coherence of the matrix
+    coherence = compute_coherence(A)
+
+    # Print the results
+    print("Is full rank:", is_full_rank)
+    print("Are columns normalized:", is_columns_normalized)
+    print("Are rows normalized:", is_rows_normalized)
+    print("Coherence:", coherence)
