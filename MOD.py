@@ -6,9 +6,6 @@ import scipy.sparse as sp
 
 
 
-def paolo():
-    return "Hello from Paolo!"
-
 
 def OMP(D, X, L):
     """
@@ -36,49 +33,27 @@ def OMP(D, X, L):
         The sparse representation of the signals over the dictionary. It should be a matrix of size (K x N).
     """
 
-    [n,P] = X.shape
-    [n,K] = D.shape
+    [n, P] = X.shape
+    [n, K] = D.shape
 
-    A = np.zeros((K,P))
-    print(f'size of A: {A.shape}')
+    A = np.zeros((K, P))
     
     for k in range(P):
-        a = np.zeros((L,))
-        print(f'size of a: {a.shape}')
-        x = X[:,k]
-        print(f'size of x: {x.shape}')
+        x = X[:, k]
         residual = x
-        print(f'size of residual: {residual.shape}')
         indx = np.array([], dtype=int)
-        for j in range(L):
-            print()
-            print()
-            print('LOOP')            
+        for j in range(L):         
             proj = D.T @ residual
-            print(f'size of residual: {residual.shape}')
-            print(f'residual: {residual}')
-            print(f'size of proj: {proj.shape}')
-            print(f'proj: {proj}')
             pos = np.argmax(np.abs(proj))
-            print(f'size of pos: {pos}')
-            print(f'pos AFTER: {pos}')
             indx = np.append(indx, pos.astype(int)) 
-            print(f'indx: {indx}')
-            print(f'D[:,indx].shape: {D[:,indx].shape}')
-            print(f'D[:,indx]: \n {D[:,indx]}')
-            a = np.linalg.pinv(D[:,indx]) @ x
+            a = np.linalg.pinv(D[:, indx]) @ x
             residual = x - D[:, indx] @ a
             if np.sum(residual ** 2) < 1e-6:
                 break
         
-        print()
-        print()
-        print('OUT OF LOOP')
         temp = np.zeros((K,))
         temp[indx] = a
-        print(f'temp: {temp}')
-
-        A[:,k] = temp
+        A[:, k] = temp
 
     return A
 
@@ -247,7 +222,8 @@ def MOD(data, parameters):
     # improve dictionary
     Dictionary = data @ CoefMatrix.T @ np.linalg.inv(CoefMatrix @ CoefMatrix.T + 1e-7 * sp.eye(CoefMatrix.shape[0]))
     sumDictElems = np.sum(np.abs(Dictionary), axis=0)
-    Dictionary = Dictionary @ np.diag(1 /  np.sqrt(sum(Dictionary ** 2, axis=0)))
+    Dictionary = np.asarray(Dictionary)
+    Dictionary = Dictionary @ np.diag(1 /  np.sqrt(np.sum(Dictionary ** 2, axis=0)))
 
     if (iterNum > 0) and (parameters['displayProgress']):
         if parameters['errorFlag'] == 0:
@@ -273,79 +249,3 @@ def MOD(data, parameters):
             
 
 
-
-
-import numpy as np
-from utils import *  # Assuming utils has required methods
-import scipy.sparse as sp
-
-# Use the exact matrices provided for testing
-
-# Original Data
-Data = np.array([
-    [0.8147, 0.6324, 0.9575, 0.9572, 0.4218, 0.6557, 0.6787, 0.6555, 0.2769, 0.6948, 0.4387, 0.1869, 0.7094, 0.6551, 0.9597, 0.7513],
-    [0.9058, 0.0975, 0.9649, 0.4854, 0.9157, 0.0357, 0.7577, 0.1712, 0.0462, 0.3171, 0.3816, 0.4898, 0.7547, 0.1626, 0.3404, 0.2551],
-    [0.1270, 0.2785, 0.1576, 0.8003, 0.7922, 0.8491, 0.7431, 0.7060, 0.0971, 0.9502, 0.7655, 0.4456, 0.2760, 0.1190, 0.5853, 0.5060],
-    [0.9134, 0.5469, 0.9706, 0.1419, 0.9595, 0.9340, 0.3922, 0.0318, 0.8235, 0.0344, 0.7952, 0.6463, 0.6797, 0.4984, 0.2238, 0.6991]
-])
-
-print('Original Data:')
-print(Data)
-
-# True Dictionary
-TrueDictionary = np.array([
-    [1.1006, -0.7423, 0.7481, -1.4023, -0.1961, 1.5877, -0.2437, 0.1049],
-    [1.5442, -1.0616, -0.1924, -1.4224, 1.4193, -0.8045, 0.2157, 0.7223],
-    [0.0859, 2.3505, 0.8886, 0.4882, 0.2916, 0.6966, -1.1658, 2.5855],
-    [-1.4916, -0.6156, -0.7648, -0.1774, 0.1978, 0.8351, -1.1480, -0.6669]
-])
-
-print('True Dictionary:')
-print(TrueDictionary)
-
-# Initial Dictionary
-InitialDictionary = np.array([
-    [0.1873, -1.7947, -0.5445, 0.7394, -0.8396, 0.1240, -1.2078, -1.0582],
-    [-0.0825, 0.8404, 0.3035, 1.7119, 1.3546, 1.4367, 2.9080, -0.4686],
-    [-1.9330, -0.8880, -0.6003, -0.1941, -1.0722, -1.9609, 0.8252, -0.2725],
-    [-0.4390, 0.1001, 0.4900, -2.1384, 0.9610, -0.1977, 1.3790, 1.0984]
-])
-
-print('Initial Dictionary:')
-print(InitialDictionary)
-
-# Define parameters for MOD function
-param = {
-    'K': 2 * Data.shape[0],  # num of atoms dict, atom = basis function
-    'L': 1,
-    'numIteration': 10,
-    'errorFlag': 0,
-    'preserveDCAtom': 0,
-    'displayProgress': 0,
-    'InitializationMethod': 'DataElements',
-    'TrueDictionary': TrueDictionary,
-    'initialDictionary': InitialDictionary  # random initialization of dictionary
-}
-
-# Normalize the initial dictionary
-for i in range(param['K']):
-    param['initialDictionary'][:, i] = param['initialDictionary'][:, i] / np.linalg.norm(param['initialDictionary'][:, i])
-
-# Run MOD function
-Dictionary, output = MOD(Data, param)
-
-# Print results
-print('Final Dictionary:')
-print(Dictionary)
-
-# Display all outputs
-print('Output:')
-print(output)
-
-if 'totalerr' in output:
-    print('Total Error after each iteration:')
-    print(output['totalerr'])
-
-if 'numCoef' in output:
-    print('Average number of coefficients per signal after each iteration:')
-    print(output['numCoef'])
