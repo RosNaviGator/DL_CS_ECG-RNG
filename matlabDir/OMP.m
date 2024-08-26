@@ -10,27 +10,27 @@ function [A]=OMP(D,X,L);
 % output arguments:
 %       A - sparse coefficient matrix.
 %=============================================
-[n,P]=size(X);
-[n,K]=size(D);
+[~,P] = size(X);
+[~,K] = size(D);
 A = zeros(K,P);
-for k=1:1:P,
+for k = 1:1:P
     a=[];
-    x=X(:,k);
-    residual=x;
-    indx=zeros(L,1);
-    for j=1:1:L,
-        proj=D'*residual;
-        [maxVal,pos]=max(abs(proj));
-        pos=pos(1);
-        indx(j)=pos;
-        a=pinv(D(:,indx(1:j)))*x;
-        residual=x-D(:,indx(1:j))*a;
+    x = X(:,k);
+    residual = x;
+    indx = zeros(L,1);
+    for j = 1:1:L
+        proj = D'*residual;
+        [~,pos] = max(abs(proj));
+        pos = pos(1);
+        indx(j) = pos;
+        a = pinv(D(:,indx(1:j)))*x;
+        residual = x-D(:,indx(1:j))*a;
         if sum(residual.^2) < 1e-6
             break;
         end
-    end;
-    temp=zeros(K,1);
-    temp(indx(1:j))=a;
-    A(:,k)=sparse(temp);
-end;
-return;
+    end
+    temp = zeros(K,1);
+    temp(indx(1:j)) = a;
+    A(:,k) = sparse(temp);
+end
+return

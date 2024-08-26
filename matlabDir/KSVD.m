@@ -86,8 +86,8 @@ if (param.preserveDCAtom>0)
 else
     FixedDictionaryElement = [];
 end
-% coefficient calculation method is OMP with fixed number of coefficients
 
+% coefficient calculation method is OMP with fixed number of coefficients
 if (size(Data,2) < param.K)
     disp('Size of data is smaller than the dictionary size. Trivial solution...');
     Dictionary = Data(:,1:size(Data,2));

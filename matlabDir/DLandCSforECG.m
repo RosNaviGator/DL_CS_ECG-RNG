@@ -76,9 +76,8 @@ for iter = 1:repeat
     param.preserveDCAtom =0;
     param.displayProgress = 0;
     param.InitializationMethod = 'DataElements';
-    param.TrueDictionary = randn(n,2*n);
-    %param.InitializationMethod = 'DataElements';
     %param.InitializationMethod = 'GivenMatrix';
+    param.TrueDictionary = randn(n,2*n);    
     iniMat = randn(n,param.K);  % random initialization of dictionary
     for i =1: param.K
         iniMat(:,i) = iniMat(:,i)/norm(iniMat(:,i));  % normalizie each atom (column)
@@ -279,6 +278,6 @@ fprintf('mean SNR_DCTT mean SNR_MODD mean SNR_KSVDD, over %d times\n', repeat);
 disp([SNR_DCTT SNR_MODD SNR_KSVDD]/repeat);
 
 
-close all;
+
 
 
