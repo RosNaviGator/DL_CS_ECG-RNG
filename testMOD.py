@@ -77,11 +77,6 @@ if 'numCoef' in output:
 
 
 
-
-
-
-
-
 # Prepare output files
 output_dir = 'debugCsvPy'  # Directory where CSV files will be stored
 if not os.path.exists(output_dir):
@@ -94,4 +89,11 @@ np.savetxt(py_dict, Dictionary, delimiter=',', fmt='%.6f')
 # also save CoefMatrix
 py_coef = os.path.join(output_dir, 'py_CoefMatrix.csv')
 np.savetxt(py_coef, output['CoefMatrix'], delimiter=',', fmt='%.6f')
+
+
+
+
+
+
+
 
