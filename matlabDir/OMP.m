@@ -12,6 +12,7 @@ function [A]=OMP(D,X,L);
 %=============================================
 [n,P]=size(X);
 [n,K]=size(D);
+A = zeros(K,P);
 for k=1:1:P,
     a=[];
     x=X(:,k);
