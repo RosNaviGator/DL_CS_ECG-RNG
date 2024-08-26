@@ -23,11 +23,9 @@ Init = randn(n,2*n);
 param.K = 2*n;  % num of atoms dict, atom = basis function
 param.L = 1;
 param.numIteration = 10;
-param.errorFlag = 0;
-param.preserveDCAtom =0;
-param.displayProgress = 0;
-param.InitializationMethod = 'DataElements';
-%param.InitializationMethod = 'GivenMatrix';
+param.preserveDCAtom =1;
+%param.InitializationMethod = 'DataElements';
+param.InitializationMethod = 'GivenMatrix';
 param.TrueDictionary = randn(n,2*n);    
 iniMat = randn(n,param.K);  % random initialization of dictionary
 for i =1: param.K

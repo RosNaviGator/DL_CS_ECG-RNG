@@ -40,11 +40,11 @@ for iter = 1:repeat
 
     trainSet = data0.val(1,start_train:end_train);
     testSet = data0.val(1,start_test:end_test);
-    disp('Shape of trainingSet');
-    disp(size(trainSet));
+    %disp('Shape of trainingSet');
+    %disp(size(trainSet));
     %disp(trainSet(1:3));
-    disp('Shape of testSet');
-    disp(size(testSet));
+    %disp('Shape of testSet');
+    %disp(size(testSet));
     %disp(testSet(1:3));
     
     %% ------------------------------------------------
@@ -61,8 +61,8 @@ for iter = 1:repeat
         %plot(TrainMat(:,i)); pause(0.1);
     end
 
-    disp('Shape of TrainMat');
-    disp(size(TrainMat));
+    %disp('Shape of TrainMat');
+    %disp(size(TrainMat));
     %disp(TrainMat(1:3,1:3));
     
 
@@ -72,9 +72,7 @@ for iter = 1:repeat
     param.K = 2*n;  % num of atoms dict, atom = basis function
     param.L = 1;
     param.numIteration = 10;
-    param.errorFlag = 0;
-    param.preserveDCAtom =0;
-    param.displayProgress = 0;
+    param.preserveDCAtom = 0;
     param.InitializationMethod = 'DataElements';
     %param.InitializationMethod = 'GivenMatrix';
     param.TrueDictionary = randn(n,2*n);    
@@ -113,8 +111,8 @@ for iter = 1:repeat
     % Test signal
     x=testSet';
     % print shape of x, print x
-    disp('Shape of x');
-    disp(size(x));
+    %disp('Shape of x');
+    %disp(size(x));
     %disp(x(1:16));
     
     % Parameters
@@ -142,8 +140,8 @@ for iter = 1:repeat
     %end
     
     
-    disp('Shape of A');
-    disp(size(A));
+    %isp('Shape of A');
+    %disp(size(A));
     %disp(A);
     
     
@@ -154,14 +152,14 @@ for iter = 1:repeat
     dict_MOD = DicMod;  % MOD dictionary (previously learned)
     dict_KSVD = DicKSVD;  % KSVD dictionary (previously learned)
 
-    disp('Shape of dict_DCT');
-    disp(size(dict_DCT));
+    %disp('Shape of dict_DCT');
+    %disp(size(dict_DCT));
     %disp(dict_DCT(1:3,1:3));
-    disp('Shape of dict_MOD');
-    disp(size(dict_MOD));
+    %disp('Shape of dict_MOD');
+    %disp(size(dict_MOD));
     %disp(dict_MOD(1:3,1:3));
-    disp('Shape of dict_KSVD');
-    disp(size(dict_KSVD));
+    %disp('Shape of dict_KSVD');
+    %disp(size(dict_KSVD));
     %disp(dict_KSVD(1:3,1:3));
 
     
@@ -201,8 +199,8 @@ for iter = 1:repeat
         
         y=A*x((i-1)*N+1:N*i,1);  % compressed signal block
         % shape of y
-        disp('Shape of y');
-        disp(size(y));
+        %disp('Shape of y');
+        %disp(size(y));
         
         xp_DCT = SL0(A1_DCT, y, sigma_min, sigma_decrease_factor, mu_0, L, A_pinv_DCT);
         xp_MOD = SL0(A1_MOD, y, sigma_min, sigma_decrease_factor, mu_0, L, A_pinv_MOD);
@@ -222,6 +220,7 @@ for iter = 1:repeat
     % DCT over original signal
     plot(testSet);
     hold on;
+    plot(zz_DCT,'b');
     % title
     title('DCT over original signal');
     % labels
@@ -229,13 +228,13 @@ for iter = 1:repeat
     ylabel('Amplitude');
     % legend
     legend('Original Signal','DCT');
-    % plot
-    plot(zz_DCT,'b');
+    
     
     
     figure;
     plot(testSet);
     hold on;
+    plot(zz_MOD,'r');
     % title
     title('MOD over original signal');
     % labels
@@ -243,12 +242,12 @@ for iter = 1:repeat
     ylabel('Amplitude');
     % legend
     legend('Original Signal','MOD');
-    % plot
-    plot(zz_MOD,'r');
+    
     
     figure;
     plot(testSet);
     hold on;
+    plot(zz_KSVD,'g');
     % title
     title('KSVD over original signal');
     % labels
@@ -256,9 +255,7 @@ for iter = 1:repeat
     ylabel('Amplitude');
     % legend
     legend('Original Signal','KSVD');
-    % plot
-    plot(zz_KSVD,'g');
-    
+     
 
     err_DCT = zz_DCT-testSet;
     SNR_DCT = 20*log10(norm(testSet)/norm(err_DCT));
@@ -274,8 +271,10 @@ for iter = 1:repeat
 end
 
 
-fprintf('mean SNR_DCTT mean SNR_MODD mean SNR_KSVDD, over %d times\n', repeat);
-disp([SNR_DCTT SNR_MODD SNR_KSVDD]/repeat);
+fprintf('mean SNR_DCT, mean SNR_MOD, mean SNR_KSVD, over %d times\n', repeat);
+fprintf('DCT: %f\n', SNR_DCTT/repeat);
+fprintf('MOD: %f\n', SNR_MODD/repeat);
+fprintf('KSVD: %f\n', SNR_KSVDD/repeat); 
 
 
 
