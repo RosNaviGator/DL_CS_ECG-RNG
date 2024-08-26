@@ -15,8 +15,6 @@ Data = np.array([
     [0.9134, 0.5469, 0.9706, 0.1419, 0.9595, 0.9340, 0.3922, 0.0318, 0.8235, 0.0344, 0.7952, 0.6463, 0.6797, 0.4984, 0.2238, 0.6991]
 ])
 
-print('Original Data:')
-print(Data)
 
 # True Dictionary
 TrueDictionary = np.array([
@@ -26,8 +24,6 @@ TrueDictionary = np.array([
     [-1.4916, -0.6156, -0.7648, -0.1774, 0.1978, 0.8351, -1.1480, -0.6669]
 ])
 
-print('True Dictionary:')
-print(TrueDictionary)
 
 # Initial Dictionary
 InitialDictionary = np.array([
@@ -37,14 +33,25 @@ InitialDictionary = np.array([
     [-0.4390, 0.1001, 0.4900, -2.1384, 0.9610, -0.1977, 1.3790, 1.0984]
 ])
 
+
+"""
+print('Original Data:')
+print(f'Original Data shape: {Data.shape}')
+printFormatted(Data)
+print('True Dictionary:')
+print(f'True Dictionary shape: {TrueDictionary.shape}')
+printFormatted(TrueDictionary)
 print('Initial Dictionary:')
-print(InitialDictionary)
+print(f'Initial Dictionary shape: {InitialDictionary.shape}')
+printFormatted(InitialDictionary)
+"""
+
 
 # Define parameters for MOD function
 param = {
     'K': 2 * Data.shape[0],  # num of atoms dict, atom = basis function
     'L': 1,
-    'numIteration': 10,
+    'numIterations': 10,
     'errorFlag': 0,
     'preserveDCAtom': 0,
     'displayProgress': 0,

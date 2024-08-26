@@ -1,4 +1,4 @@
-function [A]=OMP(D,X,L);
+function [A]=OMP(D,X,L)
 %=============================================
 % Orthogonal Matching Pursuit (OMP)
 % Sparse coding of a group of signals based on a given
@@ -23,8 +23,8 @@ for k = 1:1:P
         [~,pos] = max(abs(proj));
         pos = pos(1);
         indx(j) = pos;
-        a = pinv(D(:,indx(1:j)))*x;
-        residual = x-D(:,indx(1:j))*a;
+        a = pinv(D(:,indx(1:j))) * x;
+        residual = x - D(:,indx(1:j)) * a;
         if sum(residual.^2) < 1e-6
             break;
         end

@@ -1,6 +1,7 @@
 import numpy as np
 from utils import *
 import scipy.sparse as sp
+from utils import *
 
 
 
@@ -119,7 +120,7 @@ def MOD(data, parameters):
             - K : int
                 The number of dictionary elements to train.
             
-            - numIteration : int
+            - numIterations : int
                 The number of iterations to perform.
             
             - errorFlag : int
@@ -164,14 +165,14 @@ def MOD(data, parameters):
                 The final coefficients matrix. It should hold that Data is approximately equal to Dictionary @ output['CoefMatrix'].
             
             - ratio : numpy.ndarray, optional
-                If the true dictionary was defined (in synthetic experiments), this parameter holds a vector of length numIteration that includes
+                If the true dictionary was defined (in synthetic experiments), this parameter holds a vector of length numIterations that includes
                 the detection ratios in each iteration.
             
             - totalerr : numpy.ndarray, optional
                 The total representation error after each iteration (defined only if displayProgress == True and errorFlag == 0).
             
             - numCoef : numpy.ndarray, optional
-                A vector of length numIteration that includes the average number of coefficients required for representation of each signal
+                A vector of length numIterations that includes the average number of coefficients required for representation of each signal
                 in each iteration (defined only if displayProgress == True and errorFlag == 1).
     """
 
@@ -181,23 +182,30 @@ def MOD(data, parameters):
 
 
     if data.shape[1] < parameters['K']:
-        raise ValueError("Number of signals is smaller than the dictionary size. Trivial solution...")
-        Dictionary = Data[:, 1:data.shape[1]]
+        print("Number of signals is smaller than the dictionary size. Trivial solution...")
+        Dictionary = data[:, :data.shape[1]]
         return Dictionary, {}
     
     elif parameters['InitializationMethod'] == 'DataElements':
-        Dictionary = data[:,1:parameters['K']]
+        Dictionary = data[:,:parameters['K']]
     
     # should be changed to if 'DataElements' in parameters['InitializationMethod'], remove 'GivenMatrix' thing
     elif parameters['InitializationMethod'] == 'GivenMatrix':  
         Dictionary = parameters['initialDictionary']
 
+    # print
+    #print(f'Initialization: Dictionary shape: {Dictionary.shape}')
+    #printFormatted(Dictionary)
 
     # normalize dictionary
     Dictionary = Dictionary @ np.diag(1. / np.sqrt(np.sum(Dictionary ** 2, axis=0)))
     Dictionary = Dictionary * np.tile(np.sign(Dictionary[0, :]), (Dictionary.shape[0], 1))
     K = Dictionary.shape[1]
-    totalErr = np.zeros((1, parameters['numIteration']))
+    totalErr = np.zeros((1, parameters['numIterations']))
+
+    # print
+    #print(f'Initialization: Dictionary shape: {Dictionary.shape}')
+    #printFormatted(Dictionary)
 
 
     if parameters['TrueDictionary'].shape == Dictionary.shape:
@@ -209,11 +217,14 @@ def MOD(data, parameters):
     
     numCoef = parameters['L']
 
-    for iterNum in range(parameters['numIteration']):
+    for iterNum in range(parameters['numIterations']):
         # find coeffs
         if parameters['errorFlag'] == 0:
             # should try and use the one from sklearn
             CoefMatrix = OMP(Dictionary, data, parameters['L'])  # use the one written by me
+            print(f'Iteration {iterNum}: CoefMatrix shape: {CoefMatrix.shape}')
+            printFormatted(CoefMatrix)
+
         else:
             # non esisting implementation with errorFlag == 1
             raise ValueError("ErrorFlag == 1 not implemented yet")
