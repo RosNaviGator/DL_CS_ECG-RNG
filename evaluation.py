@@ -28,7 +28,9 @@ def calculate_snr(signal, recovered_signal):
     
     return snr
 
-def plot_signals(original_signal, reconstructed_signal, original_name="Original Signal", 
+
+
+def plot_signals(original_signal, reconstructed_signal, snr=None, original_name="Original Signal", 
                  reconstructed_name="Reconstructed Signal", save_path=None, filename=None):
     """
     Plots the original signal and the reconstructed signal on the same plot with the given names,
@@ -53,14 +55,18 @@ def plot_signals(original_signal, reconstructed_signal, original_name="Original 
     
     filename : str, optional
         The name of the file to save the plot as. If None and save_path is provided, a default name will be generated.
+
+    snr : float, optional (default=None)
+        The Signal-to-Noise Ratio to display. If None, it will be computed using the original and reconstructed signals.
     """
     
     # Ensure the signals have the same length
     if len(original_signal) != len(reconstructed_signal):
         raise ValueError("The original signal and the reconstructed signal must have the same length.")
     
-    # Calculate SNR
-    snr = calculate_snr(original_signal, reconstructed_signal)
+    # Calculate SNR if not provided
+    if snr is None:
+        snr = calculate_snr(original_signal, reconstructed_signal)
     
     # Create the plot
     plt.figure(figsize=(10, 6))
@@ -97,4 +103,4 @@ def plot_signals(original_signal, reconstructed_signal, original_name="Original 
         print(f"Plot saved to {file_path}")
     
     # Display the plot
-    plt.show() 
+    plt.show()

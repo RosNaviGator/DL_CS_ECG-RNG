@@ -67,7 +67,7 @@ for iter = 1:repeat
     
 
     %% Dictionary learning
-    %(dictionary = orthonormal sparsifying basis)
+
     
     param.K = 2*n;  % num of atoms dict, atom = basis function
     param.L = 1;
@@ -91,16 +91,18 @@ for iter = 1:repeat
 
     % Define the directory and output file name
     output_dir = './debug';
-    output_filename = fullfile(output_dir, 'DicKSVD_output.mat');
-
     % Check if the directory exists, if not, create it
     if ~exist(output_dir, 'dir')
         mkdir(output_dir);
     end
 
     % Save the dictionary to a .mat file in the specified directory
+    output_filename = fullfile(output_dir, 'DicKSVD_output.mat');
     save(output_filename, 'DicKSVD');
 
+    % save also the the MOD dictionary
+    output_filename = fullfile(output_dir, 'DicMod_output.mat');
+    save(output_filename, 'DicMod');
 
     
     
@@ -128,17 +130,17 @@ for iter = 1:repeat
     %A = randn(M,N);  % random matrix
     
     % binomial random matrix
-    %A = ones(M,N);
-    %A = binornd(A,.5);
-    %A = A-.5;A=1/sqrt(M)*A;
+    A = ones(M,N);
+    A = binornd(A,.5);
+    A = A-.5;A=1/sqrt(M)*A;
     
     % BDDB matrix
     %------ Deterministic matrix: DBBD matrix 
-    A = zeros(M,N);
-    m=N/M;
-    for i=1:M 
-        A(i,1+(i-1)*m:(i)*m) = 1;
-    end
+    %A = zeros(M,N);
+    %m=N/M;
+    %for i=1:M 
+    %    A(i,1+(i-1)*m:(i)*m) = 1;
+    %end
     
     
     disp('Shape of A');
@@ -217,10 +219,6 @@ for iter = 1:repeat
         zz_KSVD(N*j-(N-1):N*j) = zm_KSVD(:);
     end
     
-    err_DCT = zz_DCT-testSet;SNR_DCT = 20*log10(norm(testSet)/norm(err_DCT));
-    err_MOD = zz_MOD-testSet;SNR_MOD = 20*log10(norm(testSet)/norm(err_MOD));
-    err_KSVD = zz_KSVD-testSet;SNR_KSVD = 20*log10(norm(testSet)/norm(err_KSVD));
-    
     
     % DCT over original signal
     plot(testSet);
@@ -262,6 +260,14 @@ for iter = 1:repeat
     % plot
     plot(zz_KSVD,'g');
     
+
+    err_DCT = zz_DCT-testSet;
+    SNR_DCT = 20*log10(norm(testSet)/norm(err_DCT));
+    err_MOD = zz_MOD-testSet;
+    SNR_MOD = 20*log10(norm(testSet)/norm(err_MOD));
+    err_KSVD = zz_KSVD-testSet;
+    SNR_KSVD = 20*log10(norm(testSet)/norm(err_KSVD));
+
     SNR_DCTT=SNR_DCTT+SNR_DCT;
     SNR_MODD=SNR_MODD+SNR_MOD;
     SNR_KSVDD=SNR_KSVDD+SNR_KSVD;

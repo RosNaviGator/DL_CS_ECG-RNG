@@ -10,6 +10,11 @@ import sparseDictionaries as spardic
 import measurementMatrix as mesmat
 import evaluation as eval
 from ksvd import ApproximateKSVD
+from SL0 import SL0
+import csv
+import datetime
+
+
 
 # avoid plot blocking
 #plt.ion()
@@ -19,9 +24,13 @@ ovComp = 1
 
 
 # initialize Signal to Noise Ratios
-SNR_DCTT=0
-SNR_MODD=0
-SNR_KSVDD=0
+sklearn_snr = 0
+syanga_snr = 0
+matlab_snr = 0
+matlab_mod_snr = 0
+ksvd_snr = 0
+dct_snr = 0
+
 
 
 repeat = 1  # number of times to repeat the experiment
@@ -73,7 +82,7 @@ for rep in range(repeat):
 
 
     # Dictionary Learning 
-    num_comp = n-1  # Number of dictionary atoms (basis functions) to learn. Set to the number of features if you want a square dictionary matrix.
+    num_comp = 3*n  # Number of dictionary atoms (basis functions) to learn. Set to the number of features if you want a square dictionary matrix.
 
 
     # Start time
@@ -94,7 +103,7 @@ for rep in range(repeat):
         callback=None,  # A callable that gets called every five iterations of the algorithm to monitor convergence or log progress.
         verbose=False,  # If True, it prints information about the progress of the optimization algorithm during fitting. Useful for debugging.
         split_sign=False,  # If True, the dictionary will include both the positive and negative parts of the data separately, effectively doubling its size.
-        random_state=42,  # Seed for the random number generator. This ensures reproducibility by producing the same results every time the model is run with the same data and parameters.
+        random_state=None,  # Seed for the random number generator. This ensures reproducibility by producing the same results every time the model is run with the same data and parameters.
         positive_code=False,  # If True, enforces the sparse code (coefficients) to be non-negative. This is useful in cases where negative values do not make sense.
         positive_dict=False,  # If True, enforces the dictionary atoms to be non-negative. Useful in cases where dictionary elements should not have negative values.
         transform_max_iter=1000  # Maximum number of iterations to run the transform algorithm. Controls how long the sparse coding step can take.
@@ -144,6 +153,14 @@ for rep in range(repeat):
     # Test the dictionary
     sd.check_matrix_properties(matlab_dict)
 
+    # load matlab mod dictionary
+    data2 = scipy.io.loadmat('./matlabDir/debug/DicMod_output.mat')
+    matlab_mod_dict = data2['DicMod']
+    print('matlab_mod_dict.shape:', matlab_mod_dict.shape)
+    #printFormatted(matlab_mod_dict, decimals = 4)
+    # Test the dictionary
+    sd.check_matrix_properties(matlab_mod_dict)
+
 
 
     # ksvd package dictionary
@@ -185,8 +202,12 @@ for rep in range(repeat):
 
 
     # Create measurement matrix
-    Phi = mesmat.generate_DBDD_matrix(M, N)
-    # Phi = mesmat.generate_random_matrix(M, N, 'scaled_binary')
+    #Phi = mesmat.generate_DBDD_matrix(M, N)
+    #string = 'DBDD'
+
+    Phi = mesmat.generate_random_matrix(M, N, 'scaled_binary')
+    string = 'scaled_binary'
+
     print('Phi.shape:', Phi.shape)
     #printFormatted(Phi, decimals = 4)
 
@@ -195,6 +216,7 @@ for rep in range(repeat):
     sklearn_theta = Phi @ sklearn_dict
     syanga_theta = Phi @ syanga_dict
     matlab_theta = Phi @ matlab_dict
+    matlab_mod_theta = Phi @ matlab_mod_dict 
     ksvd_theta = Phi @ ksvd_dict
     dct_theta = Phi @ dct_dict
 
@@ -202,6 +224,7 @@ for rep in range(repeat):
     print('sklearn_theta.shape:', sklearn_theta.shape)
     print('syanga_theta.shape:', syanga_theta.shape)
     print('matlab_theta.shape:', matlab_theta.shape)
+    print('matlab_mod_theta.shape:', matlab_mod_theta.shape)
     print('ksvd_theta.shape:', ksvd_theta.shape)
     print('dct_theta.shape:', dct_theta.shape)
 
@@ -211,6 +234,7 @@ for rep in range(repeat):
     sklearn_theta_pinv = np.linalg.pinv(sklearn_theta)
     syanga_theta_pinv = np.linalg.pinv(syanga_theta)
     matlab_theta_pinv = np.linalg.pinv(matlab_theta)
+    matlab_mod_theta_pinv = np.linalg.pinv(matlab_mod_theta)
     ksvd_theta_pinv = np.linalg.pinv(ksvd_theta)
     dct_theta_pinv = np.linalg.pinv(dct_theta)
     mu = 2
@@ -243,7 +267,11 @@ for rep in range(repeat):
     print('x_test_rec.shape:', x_test_rec.shape)
     #print(x_test_rec)
     # eval
-    eval.plot_signals(x_test, x_test_rec, 'x_test', 'x_test_rec')
+    eval.plot_signals(reconstructed_signal=x_test_rec, original_signal=x_test,
+                      snr=None,
+                      reconstructed_name='x_test_rec',
+                      original_name='x_test'
+                      )
 
     # test reconstruction of training set
     x_train = trainMat[u_piezz]
@@ -262,16 +290,140 @@ for rep in range(repeat):
     print('x_train_rec.shape:', x_train_rec.shape)
     #print(x_train_rec)
     # eval
-    eval.plot_signals(x_train, x_train_rec, 'x_train', 'x_train_rec')
+    eval.plot_signals(reconstructed_signal=x_train_rec, original_signal=x_train,
+                      snr=None,
+                      reconstructed_name='x_train_rec',
+                      original_name='x_train'
+                      )
 
 
 
 
-    # Algo
-    for i in range(len(testSet) // N):
+    # Algorithm
+
+    # Initialize the sparse code
+    sklearn_x = np.zeros(len(x))
+    syanga_x = np.zeros(len(x))
+    matlab_x = np.zeros(len(x))
+    matlab_mod_x = np.zeros(len(x))
+    ksvd_x = np.zeros(len(x))
+    dct_x = np.zeros(len(x))
 
 
+    for i in range(len(x) // N):
+
+        # Sampling Phase
         y = Phi @ x[i*N:(i+1)*N]
+        print('y.shape:', y.shape)
+        #print(y)
+
+
+        # SL0: Sparse reconstruction
+        sklearn_xp = SL0(y, sklearn_theta, sigma_min, sig_dec_fact, 
+                         mu, l, sklearn_theta_pinv, showProgress=False)
+        syanga_xp = SL0(y, syanga_theta, sigma_min, sig_dec_fact,
+                        mu, l, syanga_theta_pinv, showProgress=False)
+        matlab_xp = SL0(y, matlab_theta, sigma_min, sig_dec_fact,
+                        mu, l, matlab_theta_pinv, showProgress=False)
+        matlab_mod_xp = SL0(y, matlab_mod_theta, sigma_min, sig_dec_fact,
+                        mu, l, matlab_mod_theta_pinv, showProgress=False)
+        ksvd_xp = SL0(y, ksvd_theta, sigma_min, sig_dec_fact,
+                        mu, l, ksvd_theta_pinv, showProgress=False)
+        dct_xp = SL0(y, dct_theta, sigma_min, sig_dec_fact,
+                        mu, l, dct_theta_pinv, showProgress=False)
+
+        
+        # Recovery Phase
+        sklearn_x[i*N:(i+1)*N] = sklearn_dict @ sklearn_xp
+        syanga_x[i*N:(i+1)*N] = syanga_dict @ syanga_xp
+        matlab_x[i*N:(i+1)*N] = matlab_dict @ matlab_xp
+        matlab_mod_x[i*N:(i+1)*N] = matlab_mod_dict @ matlab_mod_xp
+        ksvd_x[i*N:(i+1)*N] = ksvd_dict @ ksvd_xp
+        dct_x[i*N:(i+1)*N] = dct_dict @ dct_xp
+    
+    
+    # Evaluation
+    sklearn_snr += eval.calculate_snr(testSet, sklearn_x)
+    syanga_snr += eval.calculate_snr(testSet, syanga_x)
+    matlab_snr += eval.calculate_snr(testSet, matlab_x)
+    matlab_mod_snr += eval.calculate_snr(testSet, matlab_mod_x)
+    ksvd_snr += eval.calculate_snr(testSet, ksvd_x)
+    dct_snr += eval.calculate_snr(testSet, dct_x)
+
+
+
+# Average the SNRs
+sklearn_snr /= repeat
+syanga_snr /= repeat
+matlab_snr /= repeat
+matlab_mod_snr /= repeat
+ksvd_snr /= repeat
+dct_snr /= repeat
+
+
+
+# Print the average over e of the snr
+print(f'Average SNR over {repeat} repetitions:')
+print('sklearn_snr:', sklearn_snr)
+print('syanga_snr:', syanga_snr)
+print('matlab_snr:', matlab_snr)
+print('matlab_mod_snr:', matlab_mod_snr)
+print('ksvd_snr:', ksvd_snr)
+print('dct_snr:', dct_snr)
+
+
+
+# append on a csv at each run, each column is a different dictionary
+# first col is measurement matrix used in string
+# second column put date Y M D H M S IN A SINGLE COMMA SEPARATED STRING
+# third column is the number of repetitions
+# then the snrs, go:
+    # Append results to a CSV file
+with open('results.csv', 'a', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow([string, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), repeat, sklearn_snr, syanga_snr, matlab_snr, matlab_mod_snr, ksvd_snr, dct_snr])
+
+
+# plot
+eval.plot_signals(reconstructed_signal=sklearn_x, original_signal=testSet,
+                    snr=sklearn_snr,
+                    reconstructed_name='sklearn_x',
+                    original_name='testSet'
+                    )
+
+eval.plot_signals(reconstructed_signal=syanga_x, original_signal=testSet,
+                    snr=syanga_snr,
+                    reconstructed_name='syanga_x',
+                    original_name='testSet'
+                    )
+
+eval.plot_signals(reconstructed_signal=matlab_x, original_signal=testSet,
+                    snr=matlab_snr,
+                    reconstructed_name='matlab_x',
+                    original_name='testSet'
+                    )
+
+eval.plot_signals(reconstructed_signal=matlab_mod_x, original_signal=testSet,
+                    snr=matlab_mod_snr,
+                    reconstructed_name='matlab_mod_x',
+                    original_name='testSet'
+                    )
+
+eval.plot_signals(reconstructed_signal=ksvd_x, original_signal=testSet,
+                    snr=ksvd_snr,
+                    reconstructed_name='ksvd_x',
+                    original_name='testSet'
+                    )
+
+eval.plot_signals(reconstructed_signal=dct_x, original_signal=testSet,
+                    snr=dct_snr,
+                    reconstructed_name='dct_x',
+                    original_name='testSet'
+                    )
+
+
+
+
     
         
 
