@@ -19,11 +19,12 @@ import measurementMatrix as mesmat
 import evaluation as evaluat
 from SL0 import SL0
 from MOD import MOD
+from KSVD import KSVD
 
 
 
 # avoid plot blocking
-#plt.ion()
+plt.ion()
 
 # Choose how overcomplete the dictionary should be
 ovComp = 1
@@ -153,12 +154,13 @@ for rep in range(repeat):
 
 
     # load matlab ksvd dictionary
-    data1 = scipy.io.loadmat('./matlabDir/debug/DicKSVD_output.mat')
-    matlab_ksvd_dict = data1['DicKSVD']
-    print('matlab_ksvd_dict.shape:', matlab_ksvd_dict.shape)
+    #data1 = scipy.io.loadmat('./matlabDir/debug/DicKSVD_output.mat')
+    #matlab_ksvd_dict = data1['DicKSVD']
+    #print('matlab_ksvd_dict.shape:', matlab_ksvd_dict.shape)
     #printFormatted(matlab_ksvd_dict, decimals = 4)
     # Test the dictionary
-    sd.check_matrix_properties(matlab_ksvd_dict)
+    #sd.check_matrix_properties(matlab_ksvd_dict)
+
 
     # load matlab mod dictionary
     #data2 = scipy.io.loadmat('./matlabDir/debug/DicMod_output.mat')
@@ -169,19 +171,15 @@ for rep in range(repeat):
     #sd.check_matrix_properties(matlab_mod_dict)
 
 
-    # use my function instead MATLAB/FORTRAN ==> COL-MAJOR
+    # MOD & KSVD: use my function instead MATLAB/FORTRAN ==> COL-MAJOR
     # initialize TrueDictionary and InitialDictionary at random with shape of TrainMat
-    TrueDictionary = np.random.rand(trainMat.T.shape[0],  2 * trainMat.T.shape[0])    
     # Define parameters for MOD function
     param = {
         'K': 2 * trainMat.T.shape[0],  # num of atoms dict, atom = basis function
         'L': 1,
         'numIterations': 10,
-        'errorFlag': 0,
         'preserveDCAtom': 0,
-        'displayProgress': 0,
-        'InitializationMethod': 'GivenMatrix', # 'DataElements' or 'GivenMatrix'
-        'TrueDictionary': TrueDictionary,
+        'InitializationMethod': 'DataElements', # 'DataElements' or 'GivenMatrix'
         'initialDictionary': None  # random initialization of dictionary is futher on
     }
     # initialize InitialDictionary
@@ -190,13 +188,16 @@ for rep in range(repeat):
         InitialDictionary[:, i] = InitialDictionary[:, i] / np.linalg.norm(InitialDictionary[:, i])
     param['initialDictionary'] = InitialDictionary
 
-    # Normalize the initial dictionary
     # Run MOD function
     matlab_mod_dict, output = MOD(trainMat.T, param)
     # Test the dictionary
     sd.check_matrix_properties(matlab_mod_dict)
 
-
+    # Run KSVD 
+    matlab_ksvd_dict, X = KSVD(trainMat.T, param)
+    # Test the dictionary
+    sd.check_matrix_properties(matlab_ksvd_dict)
+    
 
 
 
@@ -245,6 +246,7 @@ for rep in range(repeat):
     Phi = mesmat.generate_random_matrix(M, N, 'scaled_binary')
     string = 'scaled_binary'
 
+    Phi_kron = np.kron(np.eye,)
     print('Phi.shape:', Phi.shape)
     #printFormatted(Phi, decimals = 4)
 
