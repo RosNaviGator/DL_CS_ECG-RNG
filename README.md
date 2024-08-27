@@ -1,3 +1,11 @@
+# This branch is completely random
+
+It was during work in progress, it's here only to keep the tests with other adaptive learning dictionaries like the one from sklearn
+
+It's a mess...
+
+
+
 Needs version of python < 3.12 for sparseland (3.8)
 
 ```sh
