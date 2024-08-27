@@ -8,13 +8,11 @@ n = 4; % Dimension of each signal
 N = 16; % Number of signals
 % Generate random Data matrix with fixed seed
 Data = rand(n, N); % Random matrix of size n x N with reproducibility
+Data = 10000*Data; % Scale up the data
 
 % print original
 %disp('Original Data:');
 %disp(Data);
-%True = randn(n,2*n);
-%disp('True Dictionary:');
-%disp(True);
 %Init = randn(n,2*n);
 %disp('Initial Dictionary:');
 %disp(Init);
@@ -25,7 +23,6 @@ param.numIteration = 10;
 param.preserveDCAtom = 0;
 param.InitializationMethod = 'DataElements';
 %param.InitializationMethod = 'GivenMatrix';
-param.TrueDictionary = randn(n,2*n);    
 iniMat = randn(n,param.K);  % random initialization of dictionary
 for i =1: param.K
     iniMat(:,i) = iniMat(:,i)/norm(iniMat(:,i));  % normalizie each atom (column)
@@ -62,20 +59,6 @@ disp("Arrived at the end")
 
 
 
-
-
-
-% ----------------------------------------
-%% FUNCTIONS
-% ----------------------------------------
-
-% Function to save matrix with specific precision using fprintf
-function saveMatrixWithPrecision(matrix, filename, precision)
-    fileID = fopen(filename, 'w');
-    formatSpec = [repmat(['%', precision, 'f,'], 1, size(matrix, 2)-1), '%', precision, 'f\n'];
-    fprintf(fileID, formatSpec, matrix.');
-    fclose(fileID);
-end
 
 
 

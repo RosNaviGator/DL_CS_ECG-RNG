@@ -16,15 +16,6 @@ Data = np.array([
 ])
 
 
-# True Dictionary
-TrueDictionary = np.array([
-    [1.1006, -0.7423, 0.7481, -1.4023, -0.1961, 1.5877, -0.2437, 0.1049],
-    [1.5442, -1.0616, -0.1924, -1.4224, 1.4193, -0.8045, 0.2157, 0.7223],
-    [0.0859, 2.3505, 0.8886, 0.4882, 0.2916, 0.6966, -1.1658, 2.5855],
-    [-1.4916, -0.6156, -0.7648, -0.1774, 0.1978, 0.8351, -1.1480, -0.6669]
-])
-
-
 # Initial Dictionary
 InitialDictionary = np.array([
     [0.1873, -1.7947, -0.5445, 0.7394, -0.8396, 0.1240, -1.2078, -1.0582],
@@ -34,13 +25,13 @@ InitialDictionary = np.array([
 ])
 
 
+Data = 10000*Data  # scale data
+
+
 """
 print('Original Data:')
 print(f'Original Data shape: {Data.shape}')
 printFormatted(Data)
-print('True Dictionary:')
-print(f'True Dictionary shape: {TrueDictionary.shape}')
-printFormatted(TrueDictionary)
 print('Initial Dictionary:')
 print(f'Initial Dictionary shape: {InitialDictionary.shape}')
 printFormatted(InitialDictionary)
@@ -56,7 +47,7 @@ param = {
     'preserveDCAtom': 0,
     'displayProgress': 0,
     'InitializationMethod': 'DataElements',
-    'TrueDictionary': TrueDictionary,
+    'TrueDictionary': np.eye(2),
     'initialDictionary': InitialDictionary  # random initialization of dictionary
 }
 

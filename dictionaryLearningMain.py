@@ -13,6 +13,7 @@ from ksvd import ApproximateKSVD
 from SL0 import SL0
 import csv
 import datetime
+from MOD import MOD
 
 
 
@@ -26,7 +27,7 @@ ovComp = 1
 # initialize Signal to Noise Ratios
 sklearn_snr = 0
 syanga_snr = 0
-matlab_snr = 0
+matlab_ksvd_snr = 0
 matlab_mod_snr = 0
 ksvd_snr = 0
 dct_snr = 0
@@ -57,7 +58,7 @@ for rep in range(repeat):
 
     print('trainSet.shape:', trainSet.shape)
     print(trainSet)
-    print('testSet.shape:', testSet.shape)
+    #print('testSet.shape:', testSet.shape)
     #print(testSet)
     # plot test set with label for name
     plt.plot(testSet)
@@ -82,7 +83,7 @@ for rep in range(repeat):
 
 
     # Dictionary Learning 
-    num_comp = 3*n  # Number of dictionary atoms (basis functions) to learn. Set to the number of features if you want a square dictionary matrix.
+    num_comp = 2*n  # Number of dictionary atoms (basis functions) to learn. Set to the number of features if you want a square dictionary matrix.
 
 
     # Start time
@@ -145,21 +146,58 @@ for rep in range(repeat):
 
 
 
+
+
     # load matlab ksvd dictionary
     data1 = scipy.io.loadmat('./matlabDir/debug/DicKSVD_output.mat')
-    matlab_dict = data1['DicKSVD']
-    print('matlab_dict.shape:', matlab_dict.shape)
-    #printFormatted(matlab_dict, decimals = 4)
+    matlab_ksvd_dict = data1['DicKSVD']
+    print('matlab_ksvd_dict.shape:', matlab_ksvd_dict.shape)
+    #printFormatted(matlab_ksvd_dict, decimals = 4)
     # Test the dictionary
-    sd.check_matrix_properties(matlab_dict)
+    sd.check_matrix_properties(matlab_ksvd_dict)
 
     # load matlab mod dictionary
-    data2 = scipy.io.loadmat('./matlabDir/debug/DicMod_output.mat')
-    matlab_mod_dict = data2['DicMod']
-    print('matlab_mod_dict.shape:', matlab_mod_dict.shape)
+    #data2 = scipy.io.loadmat('./matlabDir/debug/DicMod_output.mat')
+    #matlab_mod_dict = data2['DicMod']
+    #print('matlab_mod_dict.shape:', matlab_mod_dict.shape)
     #printFormatted(matlab_mod_dict, decimals = 4)
     # Test the dictionary
+    #sd.check_matrix_properties(matlab_mod_dict)
+
+
+    # use my function instead MATLAB/FORTRAN ==> COL-MAJOR
+    
+    # initialize TrueDictionary and InitialDictionary at random with shape of TrainMat
+    TrueDictionary = np.random.rand(trainMat.T.shape[0],  2 * trainMat.T.shape[0])
+    
+    # Define parameters for MOD function
+    param = {
+        'K': 2 * trainMat.T.shape[0],  # num of atoms dict, atom = basis function
+        'L': 1,
+        'numIterations': 10,
+        'errorFlag': 0,
+        'preserveDCAtom': 0,
+        'displayProgress': 0,
+        'InitializationMethod': 'DataElements',
+        'TrueDictionary': TrueDictionary,
+        'initialDictionary': None  # random initialization of dictionary is futher on
+    }
+
+    # initialize InitialDictionary
+    InitialDictionary = np.random.rand(trainMat.T.shape[0], param['K'])
+    # assign to param
+    param['initialDictionary'] = InitialDictionary
+    # Normalize the initial dictionary
+    for i in range(param['K']):
+        param['initialDictionary'][:, i] = param['initialDictionary'][:, i] / np.linalg.norm(param['initialDictionary'][:, i])
+
+    # Run MOD function
+    matlab_mod_dict, output = MOD(trainMat.T, param)
+
+    # Test the dictionary
     sd.check_matrix_properties(matlab_mod_dict)
+
+
 
 
 
@@ -215,7 +253,7 @@ for rep in range(repeat):
     # Theta matrix
     sklearn_theta = Phi @ sklearn_dict
     syanga_theta = Phi @ syanga_dict
-    matlab_theta = Phi @ matlab_dict
+    matlab_theta = Phi @ matlab_ksvd_dict
     matlab_mod_theta = Phi @ matlab_mod_dict 
     ksvd_theta = Phi @ ksvd_dict
     dct_theta = Phi @ dct_dict
@@ -247,7 +285,8 @@ for rep in range(repeat):
 
     
     u_piezz = 19
-    current_dict = sklearn_dict
+    current_dict = matlab_mod_dict
+
     # test reconstruction of test set
     # print x shape
     print('x.shape:', x.shape)
@@ -304,7 +343,7 @@ for rep in range(repeat):
     # Initialize the sparse code
     sklearn_x = np.zeros(len(x))
     syanga_x = np.zeros(len(x))
-    matlab_x = np.zeros(len(x))
+    matlab_ksvd_x = np.zeros(len(x))
     matlab_mod_x = np.zeros(len(x))
     ksvd_x = np.zeros(len(x))
     dct_x = np.zeros(len(x))
@@ -314,7 +353,7 @@ for rep in range(repeat):
 
         # Sampling Phase
         y = Phi @ x[i*N:(i+1)*N]
-        print('y.shape:', y.shape)
+        #print('y.shape:', y.shape)
         #print(y)
 
 
@@ -323,7 +362,7 @@ for rep in range(repeat):
                          mu, l, sklearn_theta_pinv, showProgress=False)
         syanga_xp = SL0(y, syanga_theta, sigma_min, sig_dec_fact,
                         mu, l, syanga_theta_pinv, showProgress=False)
-        matlab_xp = SL0(y, matlab_theta, sigma_min, sig_dec_fact,
+        matlab_ksvd_xp = SL0(y, matlab_theta, sigma_min, sig_dec_fact,
                         mu, l, matlab_theta_pinv, showProgress=False)
         matlab_mod_xp = SL0(y, matlab_mod_theta, sigma_min, sig_dec_fact,
                         mu, l, matlab_mod_theta_pinv, showProgress=False)
@@ -336,7 +375,7 @@ for rep in range(repeat):
         # Recovery Phase
         sklearn_x[i*N:(i+1)*N] = sklearn_dict @ sklearn_xp
         syanga_x[i*N:(i+1)*N] = syanga_dict @ syanga_xp
-        matlab_x[i*N:(i+1)*N] = matlab_dict @ matlab_xp
+        matlab_ksvd_x[i*N:(i+1)*N] = matlab_ksvd_dict @ matlab_ksvd_xp
         matlab_mod_x[i*N:(i+1)*N] = matlab_mod_dict @ matlab_mod_xp
         ksvd_x[i*N:(i+1)*N] = ksvd_dict @ ksvd_xp
         dct_x[i*N:(i+1)*N] = dct_dict @ dct_xp
@@ -345,7 +384,7 @@ for rep in range(repeat):
     # Evaluation
     sklearn_snr += eval.calculate_snr(testSet, sklearn_x)
     syanga_snr += eval.calculate_snr(testSet, syanga_x)
-    matlab_snr += eval.calculate_snr(testSet, matlab_x)
+    matlab_ksvd_snr += eval.calculate_snr(testSet, matlab_ksvd_x)
     matlab_mod_snr += eval.calculate_snr(testSet, matlab_mod_x)
     ksvd_snr += eval.calculate_snr(testSet, ksvd_x)
     dct_snr += eval.calculate_snr(testSet, dct_x)
@@ -355,7 +394,7 @@ for rep in range(repeat):
 # Average the SNRs
 sklearn_snr /= repeat
 syanga_snr /= repeat
-matlab_snr /= repeat
+matlab_ksvd_snr /= repeat
 matlab_mod_snr /= repeat
 ksvd_snr /= repeat
 dct_snr /= repeat
@@ -366,7 +405,7 @@ dct_snr /= repeat
 print(f'Average SNR over {repeat} repetitions:')
 print('sklearn_snr:', sklearn_snr)
 print('syanga_snr:', syanga_snr)
-print('matlab_snr:', matlab_snr)
+print('matlab_ksvd_snr:', matlab_ksvd_snr)
 print('matlab_mod_snr:', matlab_mod_snr)
 print('ksvd_snr:', ksvd_snr)
 print('dct_snr:', dct_snr)
@@ -381,7 +420,7 @@ print('dct_snr:', dct_snr)
     # Append results to a CSV file
 with open('results.csv', 'a', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow([string, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), repeat, sklearn_snr, syanga_snr, matlab_snr, matlab_mod_snr, ksvd_snr, dct_snr])
+    writer.writerow([string, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), repeat, sklearn_snr, syanga_snr, matlab_ksvd_snr, matlab_mod_snr, ksvd_snr, dct_snr])
 
 
 # plot
@@ -397,9 +436,9 @@ eval.plot_signals(reconstructed_signal=syanga_x, original_signal=testSet,
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=matlab_x, original_signal=testSet,
-                    snr=matlab_snr,
-                    reconstructed_name='matlab_x',
+eval.plot_signals(reconstructed_signal=matlab_ksvd_x, original_signal=testSet,
+                    snr=matlab_ksvd_snr,
+                    reconstructed_name='matlab_ksvd_x',
                     original_name='testSet'
                     )
 

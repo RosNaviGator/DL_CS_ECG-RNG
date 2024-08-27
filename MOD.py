@@ -2,6 +2,7 @@ import numpy as np
 from utils import *
 import scipy.sparse as sp
 from utils import *
+import os
 
 
 
@@ -193,18 +194,39 @@ def MOD(data, parameters):
     elif parameters['InitializationMethod'] == 'GivenMatrix':  
         Dictionary = parameters['initialDictionary']
 
-    # print
-    #print(f'Initialization: Dictionary shape: {Dictionary.shape}')
-    #printFormatted(Dictionary)
 
+
+
+
+
+
+    for i in range(5): print()
+    print(f'Type(Dictionary): {type(Dictionary)}, Dictionary.dtype: {Dictionary.dtype}')
+    
+    
+    # Data arrives here as int16, so we need to convert it to float64
+    Dictionary = Dictionary.astype(np.float64)
     # normalize dictionary
     Dictionary = Dictionary @ np.diag(1. / np.sqrt(np.sum(Dictionary ** 2, axis=0)))
+
+    #print(f'Initialization: Dictionary shape: {Dictionary.shape}')
+    #printFormatted(Dictionary)
+    # Prepare output files
+    output_dir = 'debugCsvPy'  # Directory where CSV files will be stored
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    # Define file paths
+    py_dict = os.path.join(output_dir, 'py_test.csv')
+    # Save the dictionary
+    np.savetxt(py_dict, Dictionary, delimiter=',', fmt='%.6f')
+    
+
     Dictionary = Dictionary * np.tile(np.sign(Dictionary[0, :]), (Dictionary.shape[0], 1))
     K = Dictionary.shape[1]
     totalErr = np.zeros((1, parameters['numIterations']))
 
     # print
-    #print(f'Initialization: Dictionary shape: {Dictionary.shape}')
+    print(f'Initialization: Dictionary shape: {Dictionary.shape}')
     #printFormatted(Dictionary)
 
 
@@ -222,8 +244,8 @@ def MOD(data, parameters):
         if parameters['errorFlag'] == 0:
             # should try and use the one from sklearn
             CoefMatrix = OMP(Dictionary, data, parameters['L'])  # use the one written by me
-            print(f'Iteration {iterNum}: CoefMatrix shape: {CoefMatrix.shape}')
-            printFormatted(CoefMatrix)
+            #print(f'Iteration {iterNum}: CoefMatrix shape: {CoefMatrix.shape}')
+            #printFormatted(CoefMatrix)
 
         else:
             # non esisting implementation with errorFlag == 1

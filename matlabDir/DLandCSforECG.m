@@ -40,9 +40,9 @@ for iter = 1:repeat
 
     trainSet = data0.val(1,start_train:end_train);
     testSet = data0.val(1,start_test:end_test);
-    %disp('Shape of trainingSet');
-    %disp(size(trainSet));
-    %disp(trainSet(1:3));
+    disp('Shape of trainingSet');
+    disp(size(trainSet));
+    disp(trainSet(1:3));
     %disp('Shape of testSet');
     %disp(size(testSet));
     %disp(testSet(1:3));
@@ -275,6 +275,9 @@ fprintf('mean SNR_DCT, mean SNR_MOD, mean SNR_KSVD, over %d times\n', repeat);
 fprintf('DCT: %f\n', SNR_DCTT/repeat);
 fprintf('MOD: %f\n', SNR_MODD/repeat);
 fprintf('KSVD: %f\n', SNR_KSVDD/repeat); 
+
+
+
 
 
 
