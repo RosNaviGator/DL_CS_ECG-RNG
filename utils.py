@@ -1,5 +1,9 @@
+# system imports
+import os
+
+# third party imports
 import numpy as np
-from sklearn.linear_model import Lasso
+
 
 def printFormatted(matrix, decimals=4):
     """
@@ -48,4 +52,20 @@ def printFormatted(matrix, decimals=4):
     # Print the formatted matrix
     print(formatted_matrix)
 
+
+def py_test_csv(array):
+    """
+    Save a numpy array as a CSV file in ./debugCsvPy/py_test.csv
+
+    Parameters:
+    array (numpy.ndarray): The input array to be saved as a CSV file.
+    Returns:
+    None
+    """
+    
+    output_dir = 'debugCsvPy'  # Directory where CSV files will be stored
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    py_dict_path = os.path.join(output_dir, 'py_test.csv')
+    np.savetxt(py_dict_path, array, delimiter=',', fmt='%.6f')
 

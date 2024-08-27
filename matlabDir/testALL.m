@@ -8,7 +8,7 @@ n = 4; % Dimension of each signal
 N = 16; % Number of signals
 % Generate random Data matrix with fixed seed
 Data = rand(n, N); % Random matrix of size n x N with reproducibility
-Data = 10000*Data; % Scale up the datas
+
 
 % print original
 %disp('Original Data:');
@@ -17,7 +17,7 @@ Data = 10000*Data; % Scale up the datas
 %disp('Initial Dictionary:');
 %disp(Init);
 
-param.K = 2*n;  % num of atoms dict, atom = basis function
+param.K = fix(2*n);  % num of atoms dict, atom = basis function
 param.L = 1;
 param.numIteration = 10;
 param.preserveDCAtom = 0;
@@ -36,6 +36,8 @@ param.initialDictionary = iniMat;
 [Dictionary, CoefMatrix] = MOD(Data, param);
 % Run KSVD function
 [DicKSVD, X] = KSVD(Data, param);
+
+mat_test_csv(DicKSVD)
 
 
 

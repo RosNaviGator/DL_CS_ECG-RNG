@@ -63,9 +63,18 @@ def MOD(data, parameters):
     """
     MOD (Method of Optimal Directions) algorithm for dictionary learning.
 
-    The MOD algorithm is a method for learning a dictionary for sparse representation of signals. 
-    This implementation takes the input data and learns a dictionary that can sparsely represent 
-    the signals using Orthogonal Matching Pursuit (OMP).
+    The MOD algorithm is a method for learning a dictionary for sparse representation of signals.
+    It iteratively updates the dictionary to best represent the input data with sparse coefficients
+    using Orthogonal Matching Pursuit (OMP).
+
+    This implementation is based on the original MATLAB version by Hadi Zanddizari 
+    and has been implemented in Python by RosNaviGator (2024).
+
+    References
+    ----------
+    Engan, K.; Aase, S.O.; Hakon Husoy, J. (1999). "Method of optimal directions for frame design".
+    1999 IEEE International Conference on Acoustics, Speech, and Signal Processing. Proceedings. ICASSP99 (Cat. No.99CH36258).
+    Vol. 5, pp. 2443–2446. doi:10.1109/ICASSP.1999.760624.
 
     Parameters
     ----------
@@ -75,40 +84,40 @@ def MOD(data, parameters):
     parameters : dict
         A dictionary containing the parameters for the MOD algorithm:
             - K : int
-                The number of dictionary elements to train.
+                The number of dictionary elements (columns) to train.
             
             - numIterations : int
-                The number of iterations to perform.
+                The number of iterations to perform for dictionary learning.
             
             - InitializationMethod : str
                 Method to initialize the dictionary. Options are:
-                * 'DataElements' - Initializes the dictionary using the data signals.
-                * 'GivenMatrix' - Initializes the dictionary using a provided matrix (requires 'initialDictionary').
+                * 'DataElements' - Initializes the dictionary using the first K data signals.
+                * 'GivenMatrix' - Initializes the dictionary using a provided matrix (requires 'initialDictionary' key).
 
             - initialDictionary : numpy.ndarray, optional
-                The matrix to use for dictionary initialization if 'InitializationMethod' is set to 'GivenMatrix'.
-            
+                The initial dictionary matrix to use if 'InitializationMethod' is set to 'GivenMatrix'.
+                It should be of size (n x K).
+
             - L : int
-                The number of non-zero coefficients to use in OMP for coefficient calculation.
+                The number of non-zero coefficients to use in OMP for sparse representation of each signal.
 
     Returns
     -------
     dictionary : numpy.ndarray
-        The trained dictionary of size (n x K).
+        The trained dictionary of size (n x K), where each column is a dictionary element.
 
-    output : dict
-        A dictionary containing the coefficient matrix ('coef_matrix') obtained after the final iteration.
+    coef_matrix : numpy.ndarray
+        The coefficient matrix of size (K x N), representing the sparse representation of the input data
+        using the trained dictionary.
     """
-
-    # intialize
-    output = {}
-    dictionary = None
 
 
     if data.shape[1] < parameters['K']:
-        print("Number of signals is smaller than the dictionary size. Trivial solution...")
+        print("MOD: Number of signals is smaller than the dictionary size. Trivial solution...")
         dictionary = data[:, :data.shape[1]]
-        return dictionary, {}
+        coef_matrix = np.eye(data.shape[1])  # trivial coefficients
+        return dictionary, coef_matrix
+    
     elif parameters['InitializationMethod'] == 'DataElements':
         dictionary = data[:,:parameters['K']]
     elif parameters['InitializationMethod'] == 'GivenMatrix':
@@ -133,5 +142,5 @@ def MOD(data, parameters):
         dictionary = np.asarray(dictionary)
         dictionary = dictionary @ np.diag(1 /  np.sqrt(np.sum(dictionary ** 2, axis=0)))
 
-    output['coef_matrix'] = coef_matrix
-    return dictionary, output
+    
+    return dictionary, coef_matrix

@@ -29,7 +29,7 @@ function [Dictionary, CoefMatrix] = MOD(Data, param)
     
     % Check if the size of the data is smaller than the dictionary size
     if (size(Data,2) < param.K)
-        disp('Size of data is smaller than the dictionary size. Trivial solution...');
+        disp('MOD: Size of data is smaller than the dictionary size. Trivial solution...');
         Dictionary = Data(:,1:size(Data,2));
         CoefMatrix = eye(size(Data,2)); % Trivial coefficients (identity matrix)
         return;

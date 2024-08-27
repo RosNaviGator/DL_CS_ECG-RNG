@@ -43,8 +43,9 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     
     % Dictionary Initialization
     if (size(Data, 2) < param.K)
-        disp('Size of data is smaller than the dictionary size. Trivial solution...');
+        disp('KSVD: Size of data is smaller than the dictionary size. Trivial solution...');
         Dictionary = Data(:, 1:size(Data, 2));
+        CoefMatrix = eye(size(Data,2)); % Trivial coefficients (identity matrix)
         return;
     elseif (strcmp(param.InitializationMethod, 'DataElements'))
         Dictionary(:, 1:param.K - param.preserveDCAtom) = Data(:, 1:param.K - param.preserveDCAtom);
@@ -52,15 +53,6 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
         Dictionary(:, 1:param.K - param.preserveDCAtom) = param.initialDictionary(:, 1:param.K - param.preserveDCAtom);
     end
 
-    % --------------------------------
-    %% DEBUG SECTION
-    % --------------------------------
-    outputDir = 'debugCsvMAT';
-    if ~exist(outputDir, 'dir')
-        mkdir(outputDir);
-    end
-    outputFilename = fullfile(outputDir, 'mat_test.csv');
-    saveMatrixWithPrecision(Dictionary, outputFilename, '6');
     
 
 
@@ -73,25 +65,29 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     % Normalize
     Dictionary = Dictionary * diag(1 ./ sqrt(sum(Dictionary .* Dictionary)));
     Dictionary = Dictionary .* repmat(sign(Dictionary(1, :)), size(Dictionary, 1), 1);
-    
+
     % Start of the K-SVD algorithm
     for iterNum = 1:param.numIteration
         % Coefficient calculation using OMP
         CoefMatrix = OMP([FixedDictionaryElement, Dictionary], Data, param.L);
+        % Improve dict elems
         rPerm = randperm(size(Dictionary, 2));
         for j = rPerm
-            [betterDictionaryElement, CoefMatrix, ~] = I_findBetterDictionaryElement(Data, [FixedDictionaryElement, Dictionary], j + size(FixedDictionaryElement, 2), CoefMatrix, param.L);
-            Dictionary(:, j) = betterDictionaryElement;
+            [betterDictionaryElement, CoefMatrix, NewVectorAdded] = I_findBetterDictionaryElement(Data, [FixedDictionaryElement, Dictionary], j + size(FixedDictionaryElement, 2), CoefMatrix, param.L);
             
+            % substitute the j-th
+            Dictionary(:, j) = betterDictionaryElement;
+            % preserveDCAtom case
             if (param.preserveDCAtom)
                 tmpCoef = FixedDictionaryElement \ betterDictionaryElement;
                 Dictionary(:, j) = betterDictionaryElement - FixedDictionaryElement * tmpCoef;
-                LDictionary(:, j) = Dictionary(:, j) / sqrt(Dictionary(:, j)' * Dictionary(:, j));
+                Dictionary(:, j) = Dictionary(:, j) / sqrt(Dictionary(:, j)' * Dictionary(:, j));
             end
         end
-        
+
         % Clear dictionary
         Dictionary = I_clearDictionary(Dictionary, CoefMatrix(size(FixedDictionaryElement, 2) + 1:end, :), Data);
+        
     end
     
     Dictionary = [FixedDictionaryElement, Dictionary];
@@ -105,7 +101,8 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     if nargin < 5
         numCoefUsed = 1;
     end
-    
+
+
     relevantDataIndices = find(CoefMatrix(j, :));  
     if isempty(relevantDataIndices)
         ErrorMat = Data - Dictionary * CoefMatrix;
@@ -133,10 +130,11 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     T2 = 0.99;
     T1 = 3;
     K = size(Dictionary, 2);
-    Er = sum((Data - Dictionary * CoefMatrix).^2, 1);
+    Er = sum( (Data - Dictionary * CoefMatrix).^2, 1);
     G = Dictionary' * Dictionary;
     G = G - diag(diag(G));
     for jj = 1:K
+        
         if max(G(jj, :)) > T2 || length(find(abs(CoefMatrix(jj, :)) > 1e-7)) <= T1
             [~, pos] = max(Er);
             Er(pos(1)) = 0;
