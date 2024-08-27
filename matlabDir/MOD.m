@@ -43,49 +43,24 @@ function [Dictionary, CoefMatrix] = MOD(Data, param)
         error('Invalid InitializationMethod specified.');
     end
 
-    %fprintf('Dictionary shape: %d x %d\n', size(Dictionary, 1), size(Dictionary, 2));
-    %disp(Dictionary);
 
-
-    
     
     % Normalize the dictionary
     Dictionary = Dictionary * diag(1 ./ sqrt(sum(Dictionary .^ 2)));
-
-
-    %fprintf('Dictionary shape: %d x %d\n', size(Dictionary, 1), size(Dictionary, 2));
-    %disp(Dictionary);
-    outputDir = 'debugCsvMAT';
-    if ~exist(outputDir, 'dir')
-        mkdir(outputDir);
-    end
-    outputFilename = fullfile(outputDir, 'mat_test.csv');
-    saveMatrixWithPrecision(Dictionary, outputFilename, '6');
-    
-
-
     Dictionary = Dictionary .* repmat(sign(Dictionary(1,:)), size(Dictionary, 1), 1); 
     
 
-    %fprintf('Dictionary shape: %d x %d\n', size(Dictionary, 1), size(Dictionary, 2));
-    %disp(Dictionary);
-    
     % Main loop for dictionary optimization
     for iterNum = 1:param.numIteration
         % Find the coefficients using OMP (Orthogonal Matching Pursuit)
         CoefMatrix = OMP(Dictionary, Data, param.L);
-        %fprintf('Iteration %d: ', iterNum);
-        %fprintf('CoefMatrix shape: %d x %d\n', size(CoefMatrix, 1), size(CoefMatrix, 2));
-        %disp(CoefMatrix);
-        
+    
         % Improve the dictionary
         Dictionary = Data * CoefMatrix' / (CoefMatrix * CoefMatrix' + 1e-7 * speye(size(CoefMatrix, 1)));
         sumDictElems = sum(abs(Dictionary));
-        zerosIdx = find(sumDictElems < eps);
-        
+        zerosIdx = find(sumDictElems < eps);       
         % Reinitialize any zero columns with random values
         Dictionary(:, zerosIdx) = randn(size(Dictionary, 1), length(zerosIdx));
-        
         % Normalize the dictionary again
         Dictionary = Dictionary * diag(1 ./ sqrt(sum(Dictionary .^ 2)));
     end

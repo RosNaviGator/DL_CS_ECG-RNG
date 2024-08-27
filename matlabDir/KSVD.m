@@ -51,13 +51,26 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     elseif (strcmp(param.InitializationMethod, 'GivenMatrix'))
         Dictionary(:, 1:param.K - param.preserveDCAtom) = param.initialDictionary(:, 1:param.K - param.preserveDCAtom);
     end
+
+    % --------------------------------
+    %% DEBUG SECTION
+    % --------------------------------
+    outputDir = 'debugCsvMAT';
+    if ~exist(outputDir, 'dir')
+        mkdir(outputDir);
+    end
+    outputFilename = fullfile(outputDir, 'mat_test.csv');
+    saveMatrixWithPrecision(Dictionary, outputFilename, '6');
     
-    % Adjust dictionary for fixed elements and normalize
+
+
+    % Adjust dictionary for fixed elements
     if (param.preserveDCAtom)
         tmpMat = FixedDictionaryElement \ Dictionary;
         Dictionary = Dictionary - FixedDictionaryElement * tmpMat;
     end
-    
+
+    % Normalize
     Dictionary = Dictionary * diag(1 ./ sqrt(sum(Dictionary .* Dictionary)));
     Dictionary = Dictionary .* repmat(sign(Dictionary(1, :)), size(Dictionary, 1), 1);
     
@@ -65,16 +78,15 @@ function [Dictionary, CoefMatrix] = KSVD(Data, param)
     for iterNum = 1:param.numIteration
         % Coefficient calculation using OMP
         CoefMatrix = OMP([FixedDictionaryElement, Dictionary], Data, param.L);
-        
         rPerm = randperm(size(Dictionary, 2));
         for j = rPerm
-            [betterDictionaryElement, CoefMatrix, addedNewVector] = I_findBetterDictionaryElement(Data, [FixedDictionaryElement, Dictionary], j + size(FixedDictionaryElement, 2), CoefMatrix, param.L);
+            [betterDictionaryElement, CoefMatrix, ~] = I_findBetterDictionaryElement(Data, [FixedDictionaryElement, Dictionary], j + size(FixedDictionaryElement, 2), CoefMatrix, param.L);
             Dictionary(:, j) = betterDictionaryElement;
             
             if (param.preserveDCAtom)
                 tmpCoef = FixedDictionaryElement \ betterDictionaryElement;
                 Dictionary(:, j) = betterDictionaryElement - FixedDictionaryElement * tmpCoef;
-                Dictionary(:, j) = Dictionary(:, j) / sqrt(Dictionary(:, j)' * Dictionary(:, j));
+                LDictionary(:, j) = Dictionary(:, j) / sqrt(Dictionary(:, j)' * Dictionary(:, j));
             end
         end
         

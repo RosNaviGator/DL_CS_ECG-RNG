@@ -1,18 +1,23 @@
+"""
+Compressed Sensing of ECG - Kronecker Technicque - Dictionary Learning
+"""
+
+import datetime
+import time
+import csv
+
 import scipy.io
 import numpy as np
 from sklearn.decomposition import DictionaryLearning
 import matplotlib.pyplot as plt
-import time
-from utils import printFormatted
+from ksvd import ApproximateKSVD
+
 import sparseDictionaries as sd
 import ksvdSyanga as syanga
 import sparseDictionaries as spardic
 import measurementMatrix as mesmat
-import evaluation as eval
-from ksvd import ApproximateKSVD
+import evaluation as evaluat
 from SL0 import SL0
-import csv
-import datetime
 from MOD import MOD
 
 
@@ -137,7 +142,6 @@ for rep in range(repeat):
                                     sparsity=int(0.1*n), initial_D=None, 
                                     maxiter=10, etol=1e-8, approx=False, 
                                     debug=True)
-    
     # Visualize
     print('syanga_dict.shape:', syanga_dict.shape)
     #printFormatted(syanga_dict, decimals = 4)
@@ -166,10 +170,8 @@ for rep in range(repeat):
 
 
     # use my function instead MATLAB/FORTRAN ==> COL-MAJOR
-    
     # initialize TrueDictionary and InitialDictionary at random with shape of TrainMat
-    TrueDictionary = np.random.rand(trainMat.T.shape[0],  2 * trainMat.T.shape[0])
-    
+    TrueDictionary = np.random.rand(trainMat.T.shape[0],  2 * trainMat.T.shape[0])    
     # Define parameters for MOD function
     param = {
         'K': 2 * trainMat.T.shape[0],  # num of atoms dict, atom = basis function
@@ -178,22 +180,19 @@ for rep in range(repeat):
         'errorFlag': 0,
         'preserveDCAtom': 0,
         'displayProgress': 0,
-        'InitializationMethod': 'DataElements',
+        'InitializationMethod': 'GivenMatrix', # 'DataElements' or 'GivenMatrix'
         'TrueDictionary': TrueDictionary,
         'initialDictionary': None  # random initialization of dictionary is futher on
     }
-
     # initialize InitialDictionary
     InitialDictionary = np.random.rand(trainMat.T.shape[0], param['K'])
-    # assign to param
-    param['initialDictionary'] = InitialDictionary
-    # Normalize the initial dictionary
     for i in range(param['K']):
-        param['initialDictionary'][:, i] = param['initialDictionary'][:, i] / np.linalg.norm(param['initialDictionary'][:, i])
+        InitialDictionary[:, i] = InitialDictionary[:, i] / np.linalg.norm(InitialDictionary[:, i])
+    param['initialDictionary'] = InitialDictionary
 
+    # Normalize the initial dictionary
     # Run MOD function
     matlab_mod_dict, output = MOD(trainMat.T, param)
-
     # Test the dictionary
     sd.check_matrix_properties(matlab_mod_dict)
 
@@ -305,8 +304,7 @@ for rep in range(repeat):
     x_test_rec = current_dict @ s_train
     print('x_test_rec.shape:', x_test_rec.shape)
     #print(x_test_rec)
-    # eval
-    eval.plot_signals(reconstructed_signal=x_test_rec, original_signal=x_test,
+    evaluat.plot_signals(reconstructed_signal=x_test_rec, original_signal=x_test,
                       snr=None,
                       reconstructed_name='x_test_rec',
                       original_name='x_test'
@@ -328,8 +326,8 @@ for rep in range(repeat):
     x_train_rec = current_dict @ s_train
     print('x_train_rec.shape:', x_train_rec.shape)
     #print(x_train_rec)
-    # eval
-    eval.plot_signals(reconstructed_signal=x_train_rec, original_signal=x_train,
+    # evaluat
+    evaluat.plot_signals(reconstructed_signal=x_train_rec, original_signal=x_train,
                       snr=None,
                       reconstructed_name='x_train_rec',
                       original_name='x_train'
@@ -370,7 +368,6 @@ for rep in range(repeat):
                         mu, l, ksvd_theta_pinv, showProgress=False)
         dct_xp = SL0(y, dct_theta, sigma_min, sig_dec_fact,
                         mu, l, dct_theta_pinv, showProgress=False)
-
         
         # Recovery Phase
         sklearn_x[i*N:(i+1)*N] = sklearn_dict @ sklearn_xp
@@ -379,15 +376,14 @@ for rep in range(repeat):
         matlab_mod_x[i*N:(i+1)*N] = matlab_mod_dict @ matlab_mod_xp
         ksvd_x[i*N:(i+1)*N] = ksvd_dict @ ksvd_xp
         dct_x[i*N:(i+1)*N] = dct_dict @ dct_xp
-    
-    
+
     # Evaluation
-    sklearn_snr += eval.calculate_snr(testSet, sklearn_x)
-    syanga_snr += eval.calculate_snr(testSet, syanga_x)
-    matlab_ksvd_snr += eval.calculate_snr(testSet, matlab_ksvd_x)
-    matlab_mod_snr += eval.calculate_snr(testSet, matlab_mod_x)
-    ksvd_snr += eval.calculate_snr(testSet, ksvd_x)
-    dct_snr += eval.calculate_snr(testSet, dct_x)
+    sklearn_snr += evaluat.calculate_snr(testSet, sklearn_x)
+    syanga_snr += evaluat.calculate_snr(testSet, syanga_x)
+    matlab_ksvd_snr += evaluat.calculate_snr(testSet, matlab_ksvd_x)
+    matlab_mod_snr += evaluat.calculate_snr(testSet, matlab_mod_x)
+    ksvd_snr += evaluat.calculate_snr(testSet, ksvd_x)
+    dct_snr += evaluat.calculate_snr(testSet, dct_x)
 
 
 
@@ -424,37 +420,37 @@ with open('results.csv', 'a', newline='') as file:
 
 
 # plot
-eval.plot_signals(reconstructed_signal=sklearn_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=sklearn_x, original_signal=testSet,
                     snr=sklearn_snr,
                     reconstructed_name='sklearn_x',
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=syanga_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=syanga_x, original_signal=testSet,
                     snr=syanga_snr,
                     reconstructed_name='syanga_x',
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=matlab_ksvd_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=matlab_ksvd_x, original_signal=testSet,
                     snr=matlab_ksvd_snr,
                     reconstructed_name='matlab_ksvd_x',
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=matlab_mod_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=matlab_mod_x, original_signal=testSet,
                     snr=matlab_mod_snr,
                     reconstructed_name='matlab_mod_x',
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=ksvd_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=ksvd_x, original_signal=testSet,
                     snr=ksvd_snr,
                     reconstructed_name='ksvd_x',
                     original_name='testSet'
                     )
 
-eval.plot_signals(reconstructed_signal=dct_x, original_signal=testSet,
+evaluat.plot_signals(reconstructed_signal=dct_x, original_signal=testSet,
                     snr=dct_snr,
                     reconstructed_name='dct_x',
                     original_name='testSet'

@@ -1,9 +1,11 @@
+"""
+Tests the MOD.py functionality
+"""
 
-import numpy as np
-from utils import *  # Assuming utils has required methods
-import scipy.sparse as sp
-from MOD import MOD
 import os
+import numpy as np
+from MOD import MOD
+from KSVD import KSVD
 
 # Use the exact matrices provided for testing
 
@@ -25,7 +27,8 @@ InitialDictionary = np.array([
 ])
 
 
-Data = 10000*Data  # scale data
+
+Data = Data  # scale data
 
 
 """
@@ -38,60 +41,40 @@ printFormatted(InitialDictionary)
 """
 
 
-# Define parameters for MOD function
+# Define parameters
 param = {
     'K': 2 * Data.shape[0],  # num of atoms dict, atom = basis function
     'L': 1,
     'numIterations': 10,
-    'errorFlag': 0,
     'preserveDCAtom': 0,
-    'displayProgress': 0,
-    'InitializationMethod': 'DataElements',
+    'InitializationMethod': 'DataElements',  # or 'GivenMatrix'
     'TrueDictionary': np.eye(2),
     'initialDictionary': InitialDictionary  # random initialization of dictionary
 }
 
 # Normalize the initial dictionary
 for i in range(param['K']):
-    param['initialDictionary'][:, i] = param['initialDictionary'][:, i] / np.linalg.norm(param['initialDictionary'][:, i])
+    param['initialDictionary'][:, i] = \
+        param['initialDictionary'][:, i] / np.linalg.norm(param['initialDictionary'][:, i])
 
 
 
 
-# Run MOD function
-Dictionary, output = MOD(Data, param)
-
-
-
-
-if 'totalerr' in output:
-    print('Total Error after each iteration:')
-    print(output['totalerr'])
-
-if 'numCoef' in output:
-    print('Average number of coefficients per signal after each iteration:')
-    print(output['numCoef'])
+# Run 
+mod_dict, coef_matrix = MOD(Data, param)
+ksvd_dict, X = KSVD(Data, param)
 
 
 
 
 # Prepare output files
-output_dir = 'debugCsvPy'  # Directory where CSV files will be stored
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-# Define file paths
-py_dict = os.path.join(output_dir, 'py_MOD.csv')
-# Save the dictionary
-np.savetxt(py_dict, Dictionary, delimiter=',', fmt='%.6f')
+OUTPUT_DIR = 'debugCsvPy'  # Directory where CSV files will be stored
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
-# also save CoefMatrix
-py_coef = os.path.join(output_dir, 'py_CoefMatrix.csv')
-np.savetxt(py_coef, output['CoefMatrix'], delimiter=',', fmt='%.6f')
-
-
-
-
-
-
+mod_dict_path = os.path.join(OUTPUT_DIR, 'py_MOD.csv')
+np.savetxt(mod_dict, mod_dict_path, delimiter=',', fmt='%.6f')
+ksvd_dict_path = os.pathjoin(OUTPUT_DIR, 'py_KSVD.csv')
+np.savetxt(ksvd_dict, ksvd_dict_path, delimiter=',', fmt='%.6f')
 
 

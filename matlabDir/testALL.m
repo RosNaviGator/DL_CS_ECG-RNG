@@ -8,7 +8,7 @@ n = 4; % Dimension of each signal
 N = 16; % Number of signals
 % Generate random Data matrix with fixed seed
 Data = rand(n, N); % Random matrix of size n x N with reproducibility
-Data = 10000*Data; % Scale up the data
+Data = 10000*Data; % Scale up the datas
 
 % print original
 %disp('Original Data:');
@@ -46,13 +46,8 @@ if ~exist(outputDir, 'dir')
 end
 outputFilename = fullfile(outputDir, 'mat_MOD.csv');
 saveMatrixWithPrecision(Dictionary, outputFilename, '6');
-outputFilename = fullfile(outputDir, 'CoefMatrix.csv');
-saveMatrixWithPrecision(CoefMatrix, outputFilename, '6');
 outputFilename = fullfile(outputDir, 'mat_KSVD.csv');
 saveMatrixWithPrecision(DicKSVD, outputFilename, '6');
-%outputFilename = fullfile(outputDir, 'X.csv');
-%saveMatrixWithPrecision(X, outputFilename, '6');
-
 
 % Just to check if the script is running
 disp("Arrived at the end")
