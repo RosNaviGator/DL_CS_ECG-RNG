@@ -171,8 +171,8 @@ def KSVD(data, param):
             param['L']
             )
         # Improve dict elems      
-        #rand_perm = np.random.permutation(dictionary.shape[1])
-        rand_perm = np.array([2, 4, 6, 3, 1, 7, 0, 5])
+        rand_perm = np.random.permutation(dictionary.shape[1])
+        #and_perm = np.array([2, 4, 6, 3, 1, 7, 0, 5])
         for j in rand_perm:
             betterDictElem, coef_matrix, newVectAdded = I_findBetterDictionaryElement(
                 data,

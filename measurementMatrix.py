@@ -1,6 +1,6 @@
 import numpy as np
 
-def generate_DBDD_matrix(M, N):
+def generate_DBBD_matrix(M, N):
     """
     Generates a deterministic Diagonally Blocked Block Diagonal (DBBD) matrix.
 
