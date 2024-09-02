@@ -49,11 +49,10 @@ for i in range(K):
 param = {
     'K': K,  # num of atoms dict, atom = basis function
     'L': 1,
-    'numIterations': 10,
-    'preserveDCAtom': 0,
-    'InitializationMethod': 'DataElements',  # or 'GivenMatrix'
-    'TrueDictionary': np.eye(2),
-    'initialDictionary': InitialDictionary  # random initialization of dictionary
+    'num_iterations': 10,
+    'preserve_dc_atom': 0,
+    'initialization_method': 'DataElements',  # or 'GivenMatrix'
+    'initial_dictionary': InitialDictionary  # random initialization of dictionary
 }
 
 # Normalize the initial dictionary
@@ -78,5 +77,4 @@ mod_dict_path = os.path.join(OUTPUT_DIR, 'py_MOD.csv')
 np.savetxt(mod_dict_path, mod_dict, delimiter=',', fmt='%.6f')
 ksvd_dict_path = os.path.join(OUTPUT_DIR, 'py_KSVD.csv')
 np.savetxt(ksvd_dict_path, ksvd_dict, delimiter=',', fmt='%.6f')
-
 

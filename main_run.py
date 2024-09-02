@@ -15,7 +15,6 @@ import evaluation as evaluat
 from SL0 import SL0
 from MOD import MOD
 from KSVD import KSVD
-from utils import py_test_csv
 
 
 # avoid plot blocking
@@ -35,7 +34,7 @@ data0 = scipy.io.loadmat('100m.mat')   # contains val: [2x650000 double]
 # data0.val(2,:) are V5 ECG data
 
 # Train and Test data
-MULT = 128  # default 128
+MULT = 256  # default 128
 TRAIN_NUM = 400  # default 400
 TEST_NUM = 25  # default 25
 
@@ -61,11 +60,11 @@ if len(x) != TEST_LEN:
     print('ERROR: x has not the correct length, check inital parameters')
     exit()
 
-N = 16  # Length of each block
+N = 8  # Length of each block
 CR = 1/4  # Compression ratio
 M = int(N * CR)  # Length of compressed measurement
 SIGNAL_BLOCKS = len(x) // N
-KRON_FACT = 4  # kronecker factor
+KRON_FACT = 32  # kronecker factor
 N_KRON = KRON_FACT * N  # kron block length
 M_KRON = int(N_KRON * CR)  # kron compressed meas. length
 SIGNAL_BLOCKS_KRON = len(x) // N_KRON
@@ -85,22 +84,24 @@ for rep in range(REPEAT):
     T_LEN = N  # Length of each training sample
     T_NUM = TRAIN_LEN // T_LEN  # Number of training samples
     trainMat = trainSet.reshape(T_NUM, T_LEN)
-    REDUND = 1  # 1 for no redundancy
+    REDUND = 2  # 1 for no redundancy
     print(trainMat.T.shape)
 
     param = {
-        'K': REDUND * trainMat.T.shape[0],  # num of atoms dict, atom = basis function
-        'L': 1,
-        'numIterations': 10,
-        'preserveDCAtom': 0,
-        'InitializationMethod': 'DataElements', # 'DataElements' or 'GivenMatrix'
-        'initialDictionary': None  # random initialization of dictionary is futher on
+        'K': REDUND * trainMat.T.shape[0],  # Number of dictionary elements (atoms)
+        'L': 1,  # Number of non-zero coefficients to use in OMP
+        'num_iterations': 10,  # Number of iterations for dictionary learning
+        'preserve_dc_atom': 0,  # Not used in the MOD function but included in original parameters
+        'initialization_method': 'DataElements',  # 'DataElements' or 'GivenMatrix'
+        'initial_dictionary': None  # To be initialized if 'GivenMatrix' is set
     }
-    # initialize InitialDictionary (only used if 'GivenMatrix' is set)
-    InitialDictionary = np.random.rand(trainMat.T.shape[0], param['K'])
+
+    # Initialize initial_dictionary (only used if 'GivenMatrix' is set)
+    initial_dictionary = np.random.rand(trainMat.T.shape[0], param['K'])
     for i in range(param['K']):
-        InitialDictionary[:, i] = InitialDictionary[:, i] / np.linalg.norm(InitialDictionary[:, i])
-    param['initialDictionary'] = InitialDictionary
+        initial_dictionary[:, i] /= np.linalg.norm(initial_dictionary[:, i])  # Normalize each column
+    param['initial_dictionary'] = initial_dictionary
+
 
     # non-kron dicts
     mod_dict, output = MOD(trainMat.T, param)
@@ -116,24 +117,26 @@ for rep in range(REPEAT):
     T_LEN = N_KRON  # Length of each sample
     T_NUM = TRAIN_LEN // T_LEN # Number of training samples
     trainMat = trainSet.reshape(T_NUM, T_LEN)
-    REDUND = 1  # 1 for no redundancy
+    REDUND = 2 # 1 for no redundancy
     print(trainMat.T.shape)
 
 
 
     param = {
-        'K': REDUND * trainMat.T.shape[0],  # num of atoms dict, atom = basis function
-        'L': 1,
-        'numIterations': 10,
-        'preserveDCAtom': 0,
-        'InitializationMethod': 'DataElements', # 'DataElements' or 'GivenMatrix'
-        'initialDictionary': None  # random initialization of dictionary is futher on
+        'K': REDUND * trainMat.T.shape[0],  # Number of dictionary elements (atoms)
+        'L': 1,  # Number of non-zero coefficients to use in OMP
+        'num_iterations': 10,  # Number of iterations for dictionary learning
+        'preserve_dc_atom': 0,  # Not used in the MOD function but included in original parameters
+        'initialization_method': 'DataElements',  # Method for dictionary initialization ('DataElements' or 'GivenMatrix')
+        'initial_dictionary': None  # To be initialized if 'GivenMatrix' is set
     }
-    # initialize InitialDictionary (only used if 'GivenMatrix' is set)
-    InitialDictionary = np.random.rand(trainMat.T.shape[0], param['K'])
+
+    # Initialize initial_dictionary (only used if 'GivenMatrix' is set)
+    initial_dictionary = np.random.rand(trainMat.T.shape[0], param['K'])
     for i in range(param['K']):
-        InitialDictionary[:, i] = InitialDictionary[:, i] / np.linalg.norm(InitialDictionary[:, i])
-    param['initialDictionary'] = InitialDictionary
+        initial_dictionary[:, i] /= np.linalg.norm(initial_dictionary[:, i])  # Normalize each column
+    param['initial_dictionary'] = initial_dictionary
+
 
     # kron
     mod_dict_kron, output = MOD(trainMat.T, param)
@@ -149,7 +152,9 @@ for rep in range(REPEAT):
     ## --------------------------------
     dct_dict = spardic.dct_dictionary(N)
     dct_dict_kron = spardic.dct_dictionary(N_KRON)
+    print('dct')
     spardic.check_matrix_properties(dct_dict)
+    print('kron dct')
     spardic.check_matrix_properties(dct_dict_kron)
 
 
@@ -160,19 +165,21 @@ for rep in range(REPEAT):
     ## --------------------------------
     ##TESTING
     ## --------------------------------
- 
+
 
     ## Create measurement matrix
     ## --------------------------------
     PHI_STRING = None
+
+
+
     # deterministic DBBD
     #Phi = mesmat.generate_DBBD_matrix(M, N)
     #PHI_STRING = 'DBBD'
 
     # randomic measurement
-    if(PHI_STRING == 'DBBD'):
+    if PHI_STRING == 'DBBD':
         raise ValueError('DBBD is already active')
-        exit(-1)
     PHI_STRING = 'scaled_binary' # need for print at the end: 'scaled_binary', 'binary', 'gaussian'
     Phi = mesmat.generate_random_matrix(M, N, PHI_STRING)
 
@@ -190,10 +197,10 @@ for rep in range(REPEAT):
     ## Theta kron matrix
     ## --------------------------------
     mod_theta_kron = Phi_kron @ mod_dict_kron
-    ksvd_theta_kron = Phi_kron @ ksvd_dict_kron  
+    ksvd_theta_kron = Phi_kron @ ksvd_dict_kron 
     dct_theta_kron = Phi_kron @ dct_dict_kron
 
-    
+
 
     # SL0 parameters
     sigma_off = 0.001
@@ -211,7 +218,7 @@ for rep in range(REPEAT):
     else:
         sigma_min = 0.00001
 
-    
+
 
     # Algorithm
 
@@ -231,7 +238,7 @@ for rep in range(REPEAT):
 
     # non-kron recovery
     for i in range(SIGNAL_BLOCKS):
-        
+
         y = Y[:,i]
 
         # SL0: Sparse reconstruction
@@ -257,6 +264,10 @@ for rep in range(REPEAT):
                         mu_SL0, L_SL0, ksvd_theta_kron_pinv, showProgress=False)
         dct_kron_xp = SL0(y, dct_theta_kron, sigma_min, sig_dec_fact,
                         mu_SL0, L_SL0, dct_theta_kron_pinv, showProgress=False)
+        # Recovery Phase
+        mod_kron_x[i*N_KRON:(i+1)*N_KRON] = mod_dict_kron @ mod_kron_xp
+        ksvd_kron_x[i*N_KRON:(i+1)*N_KRON] = ksvd_dict_kron @ ksvd_kron_xp
+        dct_kron_x[i*N_KRON:(i+1)*N_KRON] = dct_dict_kron @ dct_kron_xp
 
 
     # Evaluation (in rep loop, NOT in i loop)

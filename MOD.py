@@ -1,4 +1,6 @@
-
+"""
+MOD (Method of Optimal Directions) algorithm for dictionary learning with improved numerical stability.
+"""
 
 # system imports
 import os
@@ -6,10 +8,16 @@ import os
 # third party imports
 import numpy as np
 import scipy.sparse as sp
+from scipy.linalg import solve
 
 # local imports
 from utils import *
 from OMP import OMP
+
+
+
+
+
 
 
 
@@ -59,22 +67,15 @@ def I_findDistanceBetweenDictionaries(original, new):
 
 
 
+
+
 def MOD(data, parameters):
     """
-    MOD (Method of Optimal Directions) algorithm for dictionary learning.
+    Method of Optimal Directions (MOD) algorithm for dictionary learning .
 
     The MOD algorithm is a method for learning a dictionary for sparse representation of signals.
     It iteratively updates the dictionary to best represent the input data with sparse coefficients
-    using Orthogonal Matching Pursuit (OMP).
-
-    This implementation is based on the original MATLAB version by Hadi Zanddizari 
-    and has been implemented in Python by RosNaviGator (2024).
-
-    References
-    ----------
-    Engan, K.; Aase, S.O.; Hakon Husoy, J. (1999). "Method of optimal directions for frame design".
-    1999 IEEE International Conference on Acoustics, Speech, and Signal Processing. Proceedings. ICASSP99 (Cat. No.99CH36258).
-    Vol. 5, pp. 2443–2446. doi:10.1109/ICASSP.1999.760624.
+    using the Orthogonal Matching Pursuit (OMP) algorithm.
 
     Parameters
     ----------
@@ -86,20 +87,22 @@ def MOD(data, parameters):
             - K : int
                 The number of dictionary elements (columns) to train.
             
-            - numIterations : int
+            - num_iterations : int
                 The number of iterations to perform for dictionary learning.
             
-            - InitializationMethod : str
+            - initialization_method : str
                 Method to initialize the dictionary. Options are:
                 * 'DataElements' - Initializes the dictionary using the first K data signals.
-                * 'GivenMatrix' - Initializes the dictionary using a provided matrix (requires 'initialDictionary' key).
+                * 'GivenMatrix' - Initializes the dictionary using a provided matrix 
+                  (requires 'initial_dictionary' key).
 
-            - initialDictionary : numpy.ndarray, optional
-                The initial dictionary matrix to use if 'InitializationMethod' is set to 'GivenMatrix'.
-                It should be of size (n x K).
+            - initial_dictionary : numpy.ndarray, optional
+                The initial dictionary matrix to use if 'initialization_method' is 
+                set to 'GivenMatrix'. It should be of size (n x K).
 
             - L : int
-                The number of non-zero coefficients to use in OMP for sparse representation of each signal.
+                The number of non-zero coefficients to use in OMP for sparse
+                representation of each signal.
 
     Returns
     -------
@@ -107,40 +110,69 @@ def MOD(data, parameters):
         The trained dictionary of size (n x K), where each column is a dictionary element.
 
     coef_matrix : numpy.ndarray
-        The coefficient matrix of size (K x N), representing the sparse representation of the input data
-        using the trained dictionary.
+        The coefficient matrix of size (K x N), representing the sparse representation
+        of the input data using the trained dictionary.
     """
 
-
+    # Check if the number of signals is smaller than the dictionary size
     if data.shape[1] < parameters['K']:
-        print("MOD: Number of signals is smaller than the dictionary size. Trivial solution...")
+        print("MOD: Number of signals is smaller than the dictionary size. \
+             Returning trivial solution...")
         dictionary = data[:, :data.shape[1]]
-        coef_matrix = np.eye(data.shape[1])  # trivial coefficients
+        coef_matrix = np.eye(data.shape[1])  # Trivial coefficients
         return dictionary, coef_matrix
-    
-    elif parameters['InitializationMethod'] == 'DataElements':
-        dictionary = data[:,:parameters['K']]
-    elif parameters['InitializationMethod'] == 'GivenMatrix':
-        if 'initialDictionary' not in parameters:
-            raise ValueError("initialDictionary parameter is required when \
-                             InitializationMethod is set to 'GivenMatrix'.")
-        dictionary = parameters['initialDictionary']
 
-    # Data arrives here as int16, so we need to convert it to float64
+    # Initialize dictionary based on the specified method
+    if parameters['initialization_method'] == 'DataElements':
+        dictionary = data[:, :parameters['K']]
+    elif parameters['initialization_method'] == 'GivenMatrix':
+        if 'initial_dictionary' not in parameters:
+            raise ValueError("initial_dictionary parameter is required when "
+                             "initialization_method is set to 'GivenMatrix'.")
+        dictionary = parameters['initial_dictionary']
+    else:
+        raise ValueError(
+            "Invalid value for initialization_method. Choose 'DataElements' or 'GivenMatrix'.")
+
+    # Convert to float64 for precision
     dictionary = dictionary.astype(np.float64)
-    # normalize dictionary
-    dictionary = dictionary @ np.diag(1. / np.sqrt(np.sum(dictionary ** 2, axis=0)))
-    dictionary = dictionary * np.tile(np.sign(dictionary[0, :]), (dictionary.shape[0], 1))
 
-    for iterNum in range(parameters['numIterations']):
-        # find coeffs
-        # should try and use the one from sklearn
-        coef_matrix = OMP(dictionary, data, parameters['L'])  # use the one written by me
-        # improve dictionary
-        dictionary = data @ coef_matrix.T @ np.linalg.inv(
-            coef_matrix @ coef_matrix.T + 1e-7 * sp.eye(coef_matrix.shape[0]))
-        dictionary = np.asarray(dictionary)
-        dictionary = dictionary @ np.diag(1 /  np.sqrt(np.sum(dictionary ** 2, axis=0)))
+    # Normalize dictionary columns and avoid division by zero
+    column_norms = np.linalg.norm(dictionary, axis=0)
+    column_norms[column_norms < 1e-10] = 1  # Prevent division by zero
+    dictionary /= column_norms
 
-    
+    # Ensure positive first elements
+    dictionary *= np.sign(dictionary[0, :])
+
+    prev_dictionary = dictionary.copy()
+
+    # Run MOD algorithm
+    for iter_num in range(parameters['num_iterations']):
+        # Step 1: Sparse coding using OMP
+        coef_matrix = OMP(dictionary, data, parameters['L'])
+
+        # Step 2: Update the dictionary
+        regularization_term = 1e-7 * sp.eye(coef_matrix.shape[0])
+        matrix_a = coef_matrix @ coef_matrix.T + regularization_term.toarray()
+
+        # Use solve instead of np.linalg.inv for better numerical stability
+        dictionary = data @ coef_matrix.T @ solve(
+            matrix_a, np.eye(matrix_a.shape[0]), assume_a='pos')
+
+        # Normalize dictionary columns and avoid division by zero
+        column_norms = np.linalg.norm(dictionary, axis=0)
+        column_norms[column_norms < 1e-10] = 1  # Prevent division by zero
+        dictionary /= column_norms
+
+        # Ensure positive first elements
+        dictionary *= np.sign(dictionary[0, :])
+
+        # Convergence check
+        if np.linalg.norm(dictionary - prev_dictionary) < 1e-5:
+            print(f"MOD converged after {iter_num + 1} iterations.")
+            break
+
+        prev_dictionary = dictionary.copy()
+
     return dictionary, coef_matrix
