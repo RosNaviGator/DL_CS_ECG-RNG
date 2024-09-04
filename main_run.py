@@ -34,9 +34,9 @@ data0 = scipy.io.loadmat('100m.mat')   # contains val: [2x650000 double]
 # data0.val(2,:) are V5 ECG data
 
 # Train and Test data
-MULT = 256  # default 128
-TRAIN_NUM = 400  # default 400
-TEST_NUM = 25  # default 25
+MULT = 256  # length of train signal, default 128
+TRAIN_NUM = 400  # number of TRAIN signals, default 400
+TEST_NUM = 25  # number of TEST signals, default 25
 
 TRAIN_LEN = TRAIN_NUM*MULT
 TEST_LEN = TEST_NUM*MULT

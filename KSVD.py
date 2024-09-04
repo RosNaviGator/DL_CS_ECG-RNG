@@ -91,7 +91,7 @@ def KSVD(data, param):
         fixedDictElem = np.empty((0, 0))
 
     if data.shape[1] < param['K']:
-        print('KSVD: Size of data is smaller than the dictionary size. Trivial solution...')
+        print('KSVD: number of training data is smaller than the dictionary size. Trivial solution...')
         dictionary = data[:, :data.shape[1]]
         coef_matrix = np.eye(data.shape[1])
         return dictionary, coef_matrix
