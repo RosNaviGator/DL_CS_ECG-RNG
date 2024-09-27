@@ -60,11 +60,11 @@ if len(x) != TEST_LEN:
     print('ERROR: x has not the correct length, check inital parameters')
     exit()
 
-N = 8  # Length of each block
+N = 16  # Length of each block
 CR = 1/4  # Compression ratio
 M = int(N * CR)  # Length of compressed measurement
 SIGNAL_BLOCKS = len(x) // N
-KRON_FACT = 32  # kronecker factor
+KRON_FACT = 8  # kronecker factor
 N_KRON = KRON_FACT * N  # kron block length
 M_KRON = int(N_KRON * CR)  # kron compressed meas. length
 SIGNAL_BLOCKS_KRON = len(x) // N_KRON
@@ -73,7 +73,7 @@ SIGNAL_BLOCKS_KRON = len(x) // N_KRON
 
 REPEAT = 1  # number of times to REPEAT the experiment
 for rep in range(REPEAT):
-
+  
 
     ## --------------------------------
     ## Adaptive Dictionary Learning
@@ -174,14 +174,14 @@ for rep in range(REPEAT):
 
 
     # deterministic DBBD
-    #Phi = mesmat.generate_DBBD_matrix(M, N)
-    #PHI_STRING = 'DBBD'
+    Phi = mesmat.generate_DBBD_matrix(M, N)
+    PHI_STRING = 'DBBD'
 
     # randomic measurement
-    if PHI_STRING == 'DBBD':
-        raise ValueError('DBBD is already active')
-    PHI_STRING = 'scaled_binary' # need for print at the end: 'scaled_binary', 'binary', 'gaussian'
-    Phi = mesmat.generate_random_matrix(M, N, PHI_STRING)
+    #if PHI_STRING == 'DBBD':
+    #    raise ValueError('DBBD is already active')
+    #PHI_STRING = 'scaled_binary' # need for print at the end: 'scaled_binary', 'binary', 'gaussian'
+    #Phi = mesmat.generate_random_matrix(M, N, PHI_STRING)
 
     ## Create kron measurement matrix
     ## --------------------------------

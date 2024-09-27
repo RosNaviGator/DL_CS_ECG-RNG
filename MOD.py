@@ -116,8 +116,7 @@ def MOD(data, parameters):
 
     # Check if the number of signals is smaller than the dictionary size
     if data.shape[1] < parameters['K']:
-        print("MOD: number of training signals is smaller than the dictionary size. \
-             Returning trivial solution...")
+        print("MOD: number of training signals is smaller than the dictionary size. Returning trivial solution...")
         dictionary = data[:, :data.shape[1]]
         coef_matrix = np.eye(data.shape[1])  # Trivial coefficients
         return dictionary, coef_matrix
